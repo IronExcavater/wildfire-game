@@ -5,31 +5,40 @@ namespace Utilities
 {
     public class ObjectPool<T> where T : MonoBehaviour
     {
+        private readonly List<T> _objects = new();
         private readonly Queue<T> _pool = new();
         private readonly List<T> _prefabs;
         private readonly Transform _parent;
 
-        public ObjectPool(List<T> prefabs, int initialSize, Transform parent = null)
+        public ObjectPool(int initialSize, Transform parent = null, params T[] prefabs)
         {
-            _prefabs = prefabs;
+            if (prefabs == null || prefabs.Length == 0)
+                throw new System.ArgumentException("At least one prefab must be provided to the object pool.");
+
+            _prefabs = new List<T>(prefabs);
             _parent = parent;
 
             for (var i = 0; i < initialSize; i++)
             {
-                var obj = Object.Instantiate(prefabs[i % prefabs.Count], parent);
+                var obj = Object.Instantiate(prefabs[i % _prefabs.Count], parent);
                 obj.gameObject.SetActive(false);
                 _pool.Enqueue(obj);
             }
         }
 
-        public ObjectPool(T prefab, int initialSize, Transform parent = null)
-            : this(new List<T> { prefab }, initialSize, parent) {}
+        private T Instantiate()
+        {
+            var obj = Object.Instantiate(_prefabs[Random.Range(0, _prefabs.Count)], _parent);
+            _objects.Add(obj);
+            _pool.Enqueue(obj);
+            return obj;
+        }
 
         public T Get()
         {
-            var obj = _pool.Count > 0
-                ? _pool.Dequeue()
-                : Object.Instantiate(_prefabs[Random.Range(0, _prefabs.Count)], _parent);
+            if (_pool.Count <= 0) Instantiate();
+            var obj = _pool.Dequeue();
+
             obj.gameObject.SetActive(true);
             return obj;
         }
@@ -38,6 +47,15 @@ namespace Utilities
         {
             obj.gameObject.SetActive(false);
             _pool.Enqueue(obj);
+        }
+
+        public void Clear()
+        {
+            foreach (var obj in _objects)
+                Object.Destroy(obj);
+
+            _objects.Clear();
+            _pool.Clear();
         }
     }
 }
