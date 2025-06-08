@@ -21,11 +21,21 @@ public class FlammableObjectSmall: MonoBehaviour, IFlammable
     float hitpoint = 10f;
 
 
+    [SerializeField]
+    LayerMask flammableLayer;       
+    [SerializeField]
+    LayerMask burningLayer;    
+    [SerializeField]
+    LayerMask burntLayer;
+
+    Color originalColor;
 
     private void Awake()
     {
         BurnState = State.Dry;
         meshRenderer = GetComponent<MeshRenderer>();
+        originalColor = meshRenderer.material.color;
+        this.gameObject.layer = (int) Mathf.Log(flammableLayer.value, 2);
     }
 
     private void Update()
@@ -48,6 +58,8 @@ public class FlammableObjectSmall: MonoBehaviour, IFlammable
     {
         BurnState = State.Burning;
         burnTimer = burnDuration;
+        this.gameObject.layer = (int) Mathf.Log(burningLayer.value, 2);
+
         //change colour
         meshRenderer.material.color = Color.red;
         //fire particles
@@ -55,6 +67,8 @@ public class FlammableObjectSmall: MonoBehaviour, IFlammable
     public void Burnt()
     {
         BurnState = State.Burnt;
+        this.gameObject.layer = (int) Mathf.Log(burntLayer.value, 2);
+
         //change colour
         meshRenderer.material.color = Color.black;
         //smoke particles
@@ -63,9 +77,9 @@ public class FlammableObjectSmall: MonoBehaviour, IFlammable
     {
         burnDuration = _duration;
     }
-    public bool IsBurning()
+    public bool IsBurnt()
     {
-        return BurnState.Equals(State.Burning) || BurnState.Equals(State.Burnt);
+        return BurnState.Equals(State.Burnt);
     }
     public void SetObjectWet()
     {
@@ -80,8 +94,11 @@ public class FlammableObjectSmall: MonoBehaviour, IFlammable
     {
         if(hitpoint > 0)
         {
+            BurnState = State.Heating;
             hitpoint -= _damage;
 
+            Color newColour = Color.Lerp(Color.red, originalColor, hitpoint / 10f);
+            meshRenderer.material.color = newColour;
         }
     }
     public bool ShouldBurn()

@@ -10,7 +10,6 @@ public class FireSpreading : MonoBehaviour
     Ray rayFromMainCam;
 
     List<IFlammable> burningObjs;
-    List<Ray[]> heatRays;
 
     [SerializeField]
     LayerMask flammableLayer;
@@ -21,16 +20,18 @@ public class FireSpreading : MonoBehaviour
     [SerializeField]
     float fireDamageInterval;
 
+    bool isGameStarted = false;
+
     private void Awake()
     {
         mainCam = Camera.main;
         burningObjs = new List<IFlammable>();
-        heatRays = new List<Ray[]>();
     }
     private void Update()
     {
-        if (Mouse.current.leftButton.wasPressedThisFrame)
+        if (Mouse.current.leftButton.wasPressedThisFrame && !isGameStarted)
         {
+            isGameStarted = true;
             rayFromMainCam = mainCam.ScreenPointToRay(Mouse.current.position.ReadValue());
             Debug.Log(Mouse.current.position.ReadValue());
             if (Physics.Raycast(rayFromMainCam, out RaycastHit hit))
@@ -45,27 +46,59 @@ public class FireSpreading : MonoBehaviour
 
     void StartFire(IFlammable target)
     {
-        if (target.IsBurning())
-            return;
         burningObjs.Add(target);
-        if (burningObjs.Count.Equals(1))
-            StartCoroutine(SpreadHeat());
+
         target.Burn();
+
+        StartCoroutine(SpreadFire());
     }
 
-    IEnumerator SpreadHeat()
+    IEnumerator SpreadFire()
     {
         while (burningObjs.Count > 0)
         {
+            List<IFlammable> ignitedObjs = new List<IFlammable>();
+            List<IFlammable> burntObjs = new List<IFlammable>();
+
             for (int i = 0; i < burningObjs.Count; i++)
             {
-                if(Physics.Raycast(burningObjs[i].ObjectTransform().position, Vector3.forward, out RaycastHit hit, fireRange, flammableLayer.value)){
-                    float damage = ((fireRange - Vector3.Distance(burningObjs[i].ObjectTransform().position, hit.transform.position)) / fireRange) * fireStrength;
-                    hit.transform.GetComponent<IFlammable>().Heatup(damage);
-                }
+                Collider[] hits = Physics.OverlapSphere(burningObjs[i].ObjectTransform().position, fireRange, flammableLayer);
                 Debug.DrawLine(burningObjs[i].ObjectTransform().position, burningObjs[i].ObjectTransform().position + Vector3.forward * fireRange, Color.red, fireDamageInterval);
+                Debug.DrawLine(burningObjs[i].ObjectTransform().position, burningObjs[i].ObjectTransform().position + Vector3.back * fireRange, Color.red, fireDamageInterval);
+                Debug.DrawLine(burningObjs[i].ObjectTransform().position, burningObjs[i].ObjectTransform().position + Vector3.right * fireRange, Color.red, fireDamageInterval);
+                Debug.DrawLine(burningObjs[i].ObjectTransform().position, burningObjs[i].ObjectTransform().position + Vector3.left * fireRange, Color.red, fireDamageInterval);
+
+                if (hits.Length > 0)
+                {
+                    foreach (var hit in hits)
+                    {
+                        float damage = ((fireRange - Vector3.Distance(burningObjs[i].ObjectTransform().position, hit.ClosestPoint(burningObjs[i].ObjectTransform().position))) / fireRange) * fireStrength;
+                        IFlammable flammableObj = hit.transform.GetComponent<IFlammable>();
+                        flammableObj.Heatup(damage);
+                        if (flammableObj.ShouldBurn())
+                        {
+                            flammableObj.Burn();
+                            ignitedObjs.Add(flammableObj);
+                        }
+                    }
+                }
+                if (burningObjs[i].IsBurnt())
+                    burntObjs.Add(burningObjs[i]);
+            }
+                
+            foreach (var obj in ignitedObjs)
+            {
+                burningObjs.Add(obj);
             }
             yield return new WaitForSeconds(fireDamageInterval);
+
+            foreach (var obj in burntObjs)
+            {
+                burningObjs.Remove(obj);
+                if (burningObjs.Count <= 0)
+                    break;
+            }
         }
+        Debug.Log("Lose Game");
     }
 }
