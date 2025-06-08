@@ -1,10 +1,12 @@
 using UnityEngine;
 
-public class Tree : MonoBehaviour, IFlammable
+public class FlammableObjectSmall: MonoBehaviour, IFlammable
 {
     public enum State
     {
-        Original,
+        Dry,
+        Wet,
+        Heating,
         Burning,
         Burnt
     }
@@ -16,10 +18,13 @@ public class Tree : MonoBehaviour, IFlammable
     [SerializeField]
     float burnDuration = 2f;
     float burnTimer = 0f;
+    float hitpoint = 10f;
+
+
 
     private void Awake()
     {
-        BurnState = State.Original;
+        BurnState = State.Dry;
         meshRenderer = GetComponent<MeshRenderer>();
     }
 
@@ -61,5 +66,26 @@ public class Tree : MonoBehaviour, IFlammable
     public bool IsBurning()
     {
         return BurnState.Equals(State.Burning) || BurnState.Equals(State.Burnt);
+    }
+    public void SetObjectWet()
+    {
+        BurnState = State.Wet;
+    }
+
+    public Transform ObjectTransform()
+    {
+        return transform;
+    }
+    public void Heatup(float _damage)
+    {
+        if(hitpoint > 0)
+        {
+            hitpoint -= _damage;
+
+        }
+    }
+    public bool ShouldBurn()
+    {
+        return hitpoint <= 0;
     }
 }
