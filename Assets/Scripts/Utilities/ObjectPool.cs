@@ -3,7 +3,9 @@ using UnityEngine;
 
 namespace Utilities
 {
-    public class ObjectPool<T> where T : MonoBehaviour
+    public interface IObjectPool {}
+
+    public class ObjectPool<T> : IObjectPool where T : MonoBehaviour
     {
         private readonly List<T> _objects = new();
         private readonly Queue<T> _pool = new();
@@ -56,6 +58,13 @@ namespace Utilities
 
             _objects.Clear();
             _pool.Clear();
+        }
+
+        public override string ToString()
+        {
+            var active = _objects.Count - _pool.Count;
+
+            return $"ObjectPool<{typeof(T).Name}> {{Total: {_objects.Count}, Active: {active}, Inactive: {_pool.Count}}}";
         }
     }
 }

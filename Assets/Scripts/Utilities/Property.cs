@@ -1,28 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace Utilities
 {
-    public class Property<T>
+    public interface IProperty { }
+
+    public class Property<T> : IProperty
     {
         private T _value;
         private readonly List<Action<Property<T>, T, T>> _listeners = new();
-        [CanBeNull] private Property<T> _boundTo;
+        private Property<T> _boundTo;
         private bool _isUpdatingFromBinding;
 
-        public Property(T initialValue)
+        public Property(T initialValue = default)
         {
             _value = initialValue;
         }
 
         public T Value
         {
-            get => _value;
-            set => Set(value);
+            get => GetValue();
+            set => SetValue(value);
         }
 
-        private void Set(T newValue)
+        public T GetValue()
+        {
+            return _value;
+        }
+
+        public void SetValue(T newValue)
         {
             if (EqualityComparer<T>.Default.Equals(_value, newValue)) return;
 
@@ -61,8 +67,8 @@ namespace Utilities
         {
             Unbind();
             _boundTo = other;
-            other.AddListener(BindChanged);
             Value = other.Value;
+            other.AddListener(BindChanged);
         }
 
         public void Unbind()
@@ -88,6 +94,15 @@ namespace Utilities
             _isUpdatingFromBinding = true;
             Value = newValue;
             _isUpdatingFromBinding = false;
+        }
+
+        public override string ToString()
+        {
+            var valueStr = _value?.ToString() ?? "null";
+            var boundInfo = IsBound ? $", bound to {_boundTo._value?.ToString() ?? "null"}" : "";
+            var listenerInfo = _listeners.Count > 0 ? $", {_listeners.Count} listener{(_listeners.Count > 1 ? "s" : "")}" : "";
+
+            return $"Property<{typeof(T).Name}> {{{valueStr}{boundInfo}{listenerInfo}}}";
         }
     }
 }
