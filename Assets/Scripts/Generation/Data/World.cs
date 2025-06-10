@@ -5,13 +5,18 @@ namespace Generation.Data
 {
     public sealed class World
     {
+        public readonly Vector2Int WorldSize;
+        public readonly int ChunkSize;
         public Dictionary<Vector2Int, Chunk> Chunks = new();
 
-        public World(int width, int height, params IGeneratorPass[] passes)
+        public World(Vector2Int worldSize, int chunkSize, params IGeneratorPass[] passes)
         {
-            for (var x = 0; x < width; x++)
-                for (var y = 0; y < height; y++)
-                    Chunks[new Vector2Int(x, y)] = new Chunk(new Vector2Int(x, y));
+            WorldSize = worldSize;
+            ChunkSize = chunkSize;
+
+            for (var y = 0; y < WorldSize.y; y++)
+            for (var x = 0; x < WorldSize.x; x++)
+                Chunks[new Vector2Int(x, y)] = new Chunk(new Vector2Int(x, y));
 
             foreach (var pass in passes)
                 pass.Apply(this);

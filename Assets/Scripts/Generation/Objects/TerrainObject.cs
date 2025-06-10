@@ -1,0 +1,78 @@
+﻿using Generation.Data;
+using UnityEngine;
+using Utilities;
+
+namespace Generation.Objects
+{
+    [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+    public class TerrainObject : DataObject<Entity>
+    {
+        private MeshFilter _meshFilter;
+        private MeshRenderer _meshRenderer;
+
+        private readonly Property<Vector3> _position = new();
+        private readonly Property<float[,]> _heightmap = new();
+
+        protected override void Awake()
+        {
+            base.Awake();
+            _meshFilter = GetComponent<MeshFilter>();
+            _meshRenderer = GetComponent<MeshRenderer>();
+
+            _position.AddListener((_, _, newValue) => transform.position = newValue);
+            _heightmap.AddListener((_, _, newValue) => GenerateTerrainMesh(newValue));
+        }
+
+        protected override void OnDataChanged(Property<Entity> data, Entity oldData, Entity newData)
+        {
+            _position.BindBidirectional(newData.Position);
+
+            if (newData.TryGetProperty("Heightmap", out Property<float[,]> heightmap))
+                _heightmap.BindBidirectional(heightmap);
+        }
+
+        private void GenerateTerrainMesh(float[,] heightmap)
+        {
+            var width = heightmap.GetLength(0);
+            var height = heightmap.GetLength(1);
+
+            var vertices = new Vector3[width * height];
+            var uvs = new Vector2[width * height];
+            var triangles = new int[(width - 1) * (height - 1) * 6];
+
+            for (var y = 0; y < height; y++)
+            for (var x = 0; x < width; x++)
+            {
+                var i = y * width + x;
+                var h = heightmap[x, y];
+                vertices[i] = new Vector3(x, h, y);
+                uvs[i] = new Vector2(x / (float)(width - 1), y / (float)(height - 1));
+            }
+
+            var ti = 0;
+            for (var y = 0; y < height - 1; y++)
+            for (var x = 0; x < width - 1; x++)
+            {
+                var i = y * width + x;
+
+                triangles[ti++] = i;
+                triangles[ti++] = i + width;
+                triangles[ti++] = i + width + 1;
+
+                triangles[ti++] = i;
+                triangles[ti++] = i + width + 1;
+                triangles[ti++] = i + 1;
+            }
+
+            var mesh = new Mesh
+            {
+                vertices = vertices,
+                uv = uvs,
+                triangles = triangles
+            };
+
+            mesh.RecalculateNormals();
+            _meshFilter.sharedMesh = mesh;
+        }
+    }
+}

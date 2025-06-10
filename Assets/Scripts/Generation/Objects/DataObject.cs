@@ -7,7 +7,7 @@ namespace Generation.Data
     {
         public Property<TData> Data;
 
-        public void Awake()
+        protected virtual void Awake()
         {
             Data.AddListener(OnDataChanged);
         }

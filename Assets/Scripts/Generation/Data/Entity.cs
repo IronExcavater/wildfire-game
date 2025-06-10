@@ -6,15 +6,39 @@ namespace Generation.Data
 {
     public class Entity
     {
-        public Property<Vector3> Position;
-        public Property<System.Type> Type;
-        public Dictionary<string, Property<object>> Properties;
+        public readonly Property<Vector3> Position = new();
+        public readonly Property<System.Type> Type = new();
+        public readonly Dictionary<string, IProperty> Properties = new();
 
-        public Entity(Vector3 position, System.Type type, Dictionary<string, Property<object>> properties)
+        public Entity(System.Type type, Vector3 position = default)
         {
-            Position = new Property<Vector3>(position);
-            Type = new Property<System.Type>(type);
-            Properties = properties;
+            Type.Value = type;
+            Position.Value = position;
+        }
+
+        public Entity(System.Type type, Vector3 position = default, params (string key, IProperty value)[] properties)
+            : this(type, position)
+        {
+            foreach (var (key, value) in properties)
+                Properties[key] = value;
+        }
+
+        public void AddProperty<T>(string key, Property<T> property)
+        {
+            Properties.Add(key, property);
+        }
+
+        public bool TryGetProperty<T>(string key, out Property<T> property)
+        {
+            property = GetProperty<T>(key);
+            return property != null;
+        }
+
+        public Property<T> GetProperty<T>(string key)
+        {
+            if (Properties.TryGetValue(key, out var value) && value is Property<T> casted)
+                return casted;
+            return null;
         }
     }
 }
