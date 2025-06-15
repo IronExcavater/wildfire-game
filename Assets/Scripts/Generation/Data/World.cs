@@ -9,7 +9,7 @@ namespace Generation.Data
         public readonly int ChunkSize;
         public Dictionary<Vector2Int, Chunk> Chunks = new();
 
-        public World(Vector2Int worldSize, int chunkSize, params IGeneratorPass[] passes)
+        public World(Vector2Int worldSize, int chunkSize, params GeneratorPass[] passes)
         {
             WorldSize = worldSize;
             ChunkSize = chunkSize;

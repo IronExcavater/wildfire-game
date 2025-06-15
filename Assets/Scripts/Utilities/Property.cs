@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Utilities.Observables;
 
 namespace Utilities
 {
@@ -8,6 +9,8 @@ namespace Utilities
     public class Property<T> : IProperty
     {
         private T _value;
+        private IObservable _observable;
+
         private readonly List<Action<Property<T>, T, T>> _listeners = new();
         private Property<T> _boundTo;
         private bool _isUpdatingFromBinding;
@@ -33,7 +36,10 @@ namespace Utilities
             if (EqualityComparer<T>.Default.Equals(_value, newValue)) return;
 
             var oldValue = _value;
+
+            InnerUnsubscribe();
             _value = newValue;
+            InnerSubscribe();
 
             if (!_isUpdatingFromBinding && _boundTo != null)
             {
@@ -94,6 +100,21 @@ namespace Utilities
             _isUpdatingFromBinding = true;
             Value = newValue;
             _isUpdatingFromBinding = false;
+        }
+
+        private void InnerSubscribe()
+        {
+            if (_value is IObservable observable) observable.OnChanged += InnerChanged;
+        }
+
+        private void InnerUnsubscribe()
+        {
+            if (_value is IObservable observable) observable.OnChanged -= InnerChanged;
+        }
+
+        private void InnerChanged()
+        {
+            NotifyListeners(_value, _value);
         }
 
         public override string ToString()

@@ -6,15 +6,11 @@ using Utilities;
 namespace Generation
 {
     [Serializable]
-    public class TerrainPass : GeneratorPass
+    public class FoliagePass : GeneratorPass
     {
-        public int amplitude = 0;
-
-        public TerrainPass() { }
-
         public override void Apply(World world)
         {
-            var chunkSize = WorldGenerator.ChunkSize;
+            /*var chunkSize = WorldGenerator.ChunkSize;
 
             foreach (var chunk in world.Chunks.Values)
             {
@@ -37,7 +33,7 @@ namespace Generation
                     var ny = chunk.Position.y * chunkSize + y;
                     heightmap.Value[x, y] += Mathf.PerlinNoise(nx, ny);
                 }
-            }
+            }*/
         }
     }
 }

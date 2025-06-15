@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace Utilities
@@ -25,6 +29,41 @@ namespace Utilities
             if (length.Equals(float.MaxValue)) length = lineDirection.magnitude;
             lineDirection.Normalize();
             return Mathf.Clamp(Vector3.Dot(point - linePoint, lineDirection), 0, length);
+        }
+
+        public static Type GetBaseType(this Type type)
+        {
+            if (type.IsArray) return type.GetElementType();
+
+            if (type.IsGenericType)
+            {
+                var genericArgs = type.GetGenericArguments();
+                if (genericArgs.Length == 1) return genericArgs[0];
+
+                var enumerableInterface = type
+                    .GetInterfaces()
+                    .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+                if (enumerableInterface != null) return enumerableInterface.GetGenericArguments()[0];
+            }
+
+            return type;
+        }
+
+        public static List<Type> GetSubtypes(this Type type, Func<Type, bool> predicate = null)
+        {
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => !a.IsDynamic)
+                .SelectMany(a =>
+                {
+                    try { return a.GetTypes(); }
+                    catch (ReflectionTypeLoadException e)
+                    {
+                        Debug.LogWarning($"Failed to load types from assembly {a.FullName}:\n{e.Message}");
+                        return e.Types.Where(t => t != null);
+                    }
+                })
+                .Where(t => t != type && type.IsAssignableFrom(t) && (predicate?.Invoke(t) ?? true))
+                .ToList();
         }
     }
 }

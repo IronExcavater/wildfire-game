@@ -16,15 +16,17 @@ namespace Generation
         private World _world;
         public static World World => Instance._world;
 
-        private List<IGeneratorPass> _passes = new();
+        private List<GeneratorPass> _passes = new();
+        public IReadOnlyList<GeneratorPass> Passes => _passes.AsReadOnly();
 
-        public void AddPass(IGeneratorPass pass) => _passes.Add(pass);
+        [SerializeField] private GeneratorPasses _generatorPasses;
+
+        public void AddPass(GeneratorPass pass) => _passes.Add(pass);
 
         protected override void Awake()
         {
             base.Awake();
-            AddPass(new TerrainPass());
-
+            if (_generatorPasses) _passes.AddRange(_generatorPasses.passes);
             _world = new World(WorldSize, ChunkSize, _passes.ToArray());
         }
     }
