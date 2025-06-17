@@ -18,8 +18,9 @@ namespace Editor
         {
             EditorGUI.BeginProperty(position, label, property);
 
-            var dropdownBox = new BoxRect(position, new(position.width, EditorGUIUtility.singleLineHeight));
-            dropdownBox.Padding = new BoxInsets(left: EditorGUIUtility.standardVerticalSpacing);
+            var rect = new Rect(position.position, new(position.width, EditorGUIUtility.singleLineHeight));
+            var dropdownBox = new BoxRect(rect);
+            dropdownBox.Padding.Value = new BoxInsets(left: 6);
 
             var baseType = fieldInfo.FieldType.GetBaseType();
 
@@ -44,8 +45,7 @@ namespace Editor
 
             if (property.managedReferenceValue != null)
             {
-                var contentBox = new BoxRect(position, new(position.width, EditorGUIUtility.singleLineHeight), property);
-                contentBox.Padding = new BoxInsets(top: EditorGUIUtility.standardVerticalSpacing);
+                var contentBox = new BoxRect(rect, property);
 
                 EditorGUI.PropertyField(contentBox.Rect.Value, property, GUIContent.none, true);
             }

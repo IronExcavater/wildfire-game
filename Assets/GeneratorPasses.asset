@@ -13,16 +13,11 @@ MonoBehaviour:
   m_Name: GeneratorPasses
   m_EditorClassIdentifier: 
   passes:
-  - rid: 9081718913427570839
-  - rid: 9081718941495853119
+  - rid: 9081719042863530052
   references:
     version: 2
     RefIds:
-    - rid: 9081718913427570839
-      type: {class: TerrainPass, ns: Generation, asm: Assembly-CSharp}
-      data:
-        amplitude: 0
-    - rid: 9081718941495853119
+    - rid: 9081719042863530052
       type: {class: TerrainPass, ns: Generation, asm: Assembly-CSharp}
       data:
         amplitude: 0

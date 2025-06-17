@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using Utilities;
+using Utilities.Observables;
 
 namespace Generation.Data
 {
     public class Entity
     {
-        public readonly Property<Vector3> Position = new();
-        public readonly Property<System.Type> Type = new();
+        public readonly ValueProperty<Vector3> Position = new();
+        public readonly ValueProperty<System.Type> Type = new();
         public readonly Dictionary<string, IProperty> Properties = new();
 
         public Entity(System.Type type, Vector3 position = default)
@@ -23,20 +24,20 @@ namespace Generation.Data
                 Properties[key] = value;
         }
 
-        public void AddProperty<T>(string key, Property<T> property)
+        public void AddProperty<T>(string key, ValueProperty<T> property)
         {
             Properties.Add(key, property);
         }
 
-        public bool TryGetProperty<T>(string key, out Property<T> property)
+        public bool TryGetProperty<T>(string key, out ValueProperty<T> property)
         {
             property = GetProperty<T>(key);
             return property != null;
         }
 
-        public Property<T> GetProperty<T>(string key)
+        public ValueProperty<T> GetProperty<T>(string key)
         {
-            if (Properties.TryGetValue(key, out var value) && value is Property<T> casted)
+            if (Properties.TryGetValue(key, out var value) && value is ValueProperty<T> casted)
                 return casted;
             return null;
         }

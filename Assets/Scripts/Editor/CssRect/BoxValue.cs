@@ -14,22 +14,20 @@ namespace Editor.CssRect
             Unit = unit;
         }
 
-        public float Resolve(float relativeTo, bool isInverse = false)
+        public float Resolve(float size, ResolveMode mode = ResolveMode.Inner)
         {
-            if (isInverse)
+            if (mode == ResolveMode.Inner)
                 return Unit switch
                 {
-                    Unit.Percent => -(relativeTo * Value / (1 - Value)),
+                    Unit.Percent => -size * Value,
                     _ => -Value
                 };
-
             return Unit switch
             {
-                Unit.Percent => relativeTo * Value,
+                Unit.Percent => size * Value / (1 - Value),
                 _ => Value
             };
         }
-
         public static implicit operator BoxValue(float value) => new(value);
 
         public static implicit operator BoxValue(string input)

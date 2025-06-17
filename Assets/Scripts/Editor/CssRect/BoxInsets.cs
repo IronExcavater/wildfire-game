@@ -2,6 +2,12 @@
 
 namespace Editor.CssRect
 {
+    public enum ResolveMode
+    {
+        Inner,
+        Outer
+    }
+
     public readonly struct BoxInsets
     {
         public readonly BoxValue Top;
@@ -28,24 +34,24 @@ namespace Editor.CssRect
             Left = left;
         }
 
-        public Vector4 Resolve(Rect relativeTo, bool isInverse = false)
+        public Vector4 Resolve(Vector2 size, ResolveMode mode = ResolveMode.Inner)
         {
             return new Vector4(
-                Top.Resolve(relativeTo.height, isInverse),
-                Right.Resolve(relativeTo.width, isInverse),
-                Bottom.Resolve(relativeTo.height, isInverse),
-                Left.Resolve(relativeTo.width, isInverse)
+                Top.Resolve(size.y, mode),
+                Right.Resolve(size.x, mode),
+                Bottom.Resolve(size.y, mode),
+                Left.Resolve(size.x, mode)
             );
         }
 
-        public Rect ApplyTo(Rect rect, bool isInverse = false)
+        public Rect ApplyTo(Rect rect, ResolveMode mode = ResolveMode.Inner)
         {
-            var insets = Resolve(rect, isInverse);
+            var insets = Resolve(rect.size, mode);
             return new Rect(
-                rect.x + insets.w,
-                rect.y + insets.x,
-                rect.width - insets.w - insets.y,
-                rect.height - insets.x - insets.z
+                rect.position.x - insets.w,
+                rect.position.y - insets.x,
+                rect.size.x + insets.w + insets.y,
+                rect.size.y + insets.x + insets.z
             );
         }
     }

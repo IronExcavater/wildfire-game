@@ -7,134 +7,95 @@ namespace Editor.CssRect
 {
     public class BoxRect
     {
-        public readonly Property<BoxRect> Parent = new();
-        //public int ChildIndex => Parent.IsBound ? Parent.Value.Children.Value.IndexOf(this) : -1;
+        public readonly ValueProperty<BoxRect> Parent = new();
+        public readonly ObservableList<BoxRect> Children = new(new());
+        public readonly ValueProperty<SerializedProperty> Property = new();
 
-        public readonly Property<ObservableList<BoxRect>> Children = new(new());
-        //public readonly Property<ObservableList<Property<Rect>>> ChildRects = new(new());
+        public readonly ValueProperty<Vector2> BoundsPosition = new();
+        public readonly ValueProperty<Vector2> BoundsSize = new();
+        public readonly ValueProperty<Rect> Bounds = new();
 
-        public readonly Property<Rect> MaxRect = new();
-        public readonly Property<Rect> Rect = new();
-        public readonly Property<Rect> MinRect = new();
+        public readonly ValueProperty<Vector2> RectPosition = new();
+        public readonly ValueProperty<Vector2> RectSize = new();
+        public readonly ValueProperty<Rect> Rect = new();
 
-        public readonly Property<Vector2> MinSize = new(new(EditorGUIUtility.fieldWidth, EditorGUIUtility.singleLineHeight));
-        public readonly Property<Vector2> MaxSize = new(new(float.MaxValue, float.MaxValue));
+        public readonly ValueProperty<BoxInsets> Margin = new();
+        public readonly ValueProperty<BoxInsets> Padding = new();
+        public readonly ValueProperty<BoxAlign> Align = new();
+        public readonly ValueProperty<BoxDisplay> Display = new(BoxDisplay.Block);
 
-        public BoxInsets Padding;
-        public BoxInsets Margin;
-
-        public BoxDisplay Display = BoxDisplay.Block;
-        public BoxAlign Align;
-
-        public BoxRect(Property<BoxRect> parent)
+        public BoxRect(Rect bounds, SerializedProperty property = null)
         {
             InitalizeListeners();
-            Parent.Bind(parent);
-        }
-
-        public BoxRect(Rect maxSize)
-        {
-            InitalizeListeners();
-            MaxRect.Value = maxSize;
+            BoundsPosition.Value = bounds.position;
+            BoundsSize.Value = bounds.size;
+            Property.Value = property;
         }
 
         private void InitalizeListeners()
         {
-            Parent.AddListener((_, oldParent, newParent) =>
+            Parent.AddListener((_, change) =>
             {
-                //oldParent?.ChildRects.Value.RemoveAt(oldParent.Children.Value.IndexOf(this));
-                oldParent?.Children.Value.Remove(this);
-                newParent?.Children.Value.Add(this);
-                if (newParent != null) Display.ComputeMaxRect(newParent);
-                //newParent?.ChildRects.Value.Add(new());
-                //if (newParent != null) MaxRect.Bind(newParent.ChildRects.Value[ChildIndex]);
+                change.OldValue?.Children.Value.Remove(this);
+                change.OldValue?.BoundsPosition.RemoveListener(UpdatePositionFromParentListener);
+                change.NewValue?.Children.Value.Add(this);
+                change.NewValue?.BoundsPosition.AddListener(UpdatePositionFromParentListener);
             });
-            Children.AddListener((_, _, _) =>
+            Children.AddListener((_, change) =>
             {
-                ComputeMinRect();
-                ComputeRect();
+                foreach (var child in change.GetAdded)
+                    child.BoundsSize.AddListener(UpdateSizeFromChildrenListener);
+
+                foreach (var child in change.GetRemoved)
+                    child.BoundsSize.RemoveListener(UpdateSizeFromChildrenListener);
             });
 
-            MaxRect.AddListener((_, _, newValue) =>
+            BoundsPosition.AddListener(UpdateBoundsListener);
+            BoundsSize.AddListener(UpdateBoundsListener);
+            Bounds.AddListener((_, _) => UpdateRect());
+
+            Margin.AddListener((_, _) => UpdateRect());
+            Padding.AddListener((_, _) => UpdateRect());
+            Align.AddListener((_, _) => UpdateRect());
+            Display.AddListener((_, _) =>
             {
-                MaxSize.Value = new Vector2(
-                    Mathf.Min(newValue.x, MaxRect.Value.width),
-                    Mathf.Min(newValue.y, MaxRect.Value.height)
-                );
-                ComputeRect();
-            });
-            MinRect.AddListener((_, _, newValue) =>
-            {
-                MinSize.Value = new Vector2(
-                    Mathf.Max(newValue.x, MinRect.Value.width),
-                    Mathf.Max(newValue.y, MinRect.Value.height)
-                );
-                ComputeRect();
-            });
-            Rect.AddListener((_, _, _) =>
-            {
-                Display.ComputeLayout(Children.Value);
+                BoundsPosition.Value = Display.Value.PositionFromParent(this);
+                BoundsSize.Value = Display.Value.SizeFromChildren(this);
             });
 
-            MaxSize.AddListener((_, _, newValue) =>
-            {
-                if (newValue.x > MaxRect.Value.width || newValue.y > MaxRect.Value.height)
-                {
-                    MaxSize.Value = new Vector2(
-                        Mathf.Min(newValue.x, MaxRect.Value.width),
-                        Mathf.Min(newValue.y, MaxRect.Value.height)
-                    );
-                    return;
-                }
-                ComputeRect();
-            });
-            MinSize.AddListener((_, _, newValue) =>
-            {
-                if (newValue.x < MinRect.Value.width || newValue.y < MinRect.Value.height)
-                {
-                    MinSize.Value = new Vector2(
-                        Mathf.Max(newValue.x, MinRect.Value.width),
-                        Mathf.Max(newValue.y, MinRect.Value.height)
-                    );
-                    return;
-                }
-                ComputeRect();
-            });
+            RectPosition.AddListener(UpdateRectListener);
+            RectSize.AddListener(UpdateRectListener);
+
         }
 
-        private void ComputeMinRect()
+        private void UpdatePositionFromParentListener(PropertyBase<Vector2, Vector2, ValueChange<Vector2>> property, ValueChange<Vector2> change)
         {
-            var minRect = new Rect(MaxRect.Value.position, Display.MinSize(Children.Value));
-            var paddingRect = Padding.ApplyTo(minRect, true);
-            var marginRect = Margin.ApplyTo(paddingRect, true);
-            MinRect.Value = marginRect;
+            BoundsPosition.Value = Display.Value.PositionFromParent(this);
         }
 
-        private void ComputeMaxRect()
+        private void UpdateSizeFromChildrenListener(PropertyBase<Vector2, Vector2, ValueChange<Vector2>> property, ValueChange<Vector2> change)
         {
-            MaxRect.Value = new Rect(Parent.Value.position, )
+            BoundsSize.Value = Display.Value.SizeFromChildren(this);
         }
 
-        private void ComputeRect()
+        private void UpdateBoundsListener(PropertyBase<Vector2, Vector2, ValueChange<Vector2>> property, ValueChange<Vector2> change)
         {
-            var marginRect = Margin.ApplyTo(MaxRect.Value);
-            var alignRect = Align.ApplyTo(marginRect);
-            var clampedRect = ClampRect(alignRect, Align.Anchor);
-            var paddingRect = Padding.ApplyTo(clampedRect);
-            Rect.Value = paddingRect;
+            Bounds.Value = new Rect(BoundsPosition.Value, BoundsSize.Value);
         }
 
-        private Rect ClampRect(Rect container, Vector2 anchor)
+        private void UpdateRectListener(PropertyBase<Vector2, Vector2, ValueChange<Vector2>> property, ValueChange<Vector2> change)
         {
-            var width = Mathf.Clamp(container.width, MinSize.Value.x, MaxSize.Value.x);
-            var height = Mathf.Clamp(container.height, MinSize.Value.y, MaxSize.Value.y);
+            Rect.Value = new Rect(RectPosition.Value, RectSize.Value);
+        }
 
-            return new Rect(
-                container.x + anchor.x * (container.width - width),
-                container.y + anchor.y * (container.height - height),
-                width,
-                height
-            );
+        private void UpdateRect()
+        {
+            var margin = Margin.Value.ApplyTo(Bounds.Value);
+            var align = Align.Value.ApplyTo(margin);
+            var padding = Padding.Value.ApplyTo(new Rect(align, margin.size));
+
+            RectPosition.Value = padding.position;
+            RectSize.Value = padding.size;
         }
     }
 }

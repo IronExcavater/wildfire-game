@@ -18,15 +18,15 @@ namespace Generation
 
             foreach (var chunk in world.Chunks.Values)
             {
-                if (!chunk.TryGetEntityOfType(typeof(Terrain), out Property<Entity> terrain))
+                if (!chunk.TryGetEntityOfType(typeof(Terrain), out var terrain))
                 {
-                    terrain = new Property<Entity>(new Entity(typeof(Terrain)));
+                    terrain = new ValueProperty<Entity>(new Entity(typeof(Terrain)));
                     chunk.AddEntity(terrain);
                 }
 
-                if (!terrain.Value.TryGetProperty("Heightmap", out Property<float[,]> heightmap))
+                if (!terrain.Value.TryGetProperty("Heightmap", out ValueProperty<float[,]> heightmap))
                 {
-                    heightmap = new Property<float[,]>(new float[chunkSize, chunkSize]);
+                    heightmap = new ValueProperty<float[,]>(new float[chunkSize, chunkSize]);
                     terrain.Value.AddProperty("Heightmap", heightmap);
                 }
 

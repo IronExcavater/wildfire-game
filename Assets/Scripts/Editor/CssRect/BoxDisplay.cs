@@ -1,9 +1,4 @@
-﻿using System.Linq;
-using Editor.CssRect;
-using Unity.VisualScripting;
-using UnityEngine;
-using Utilities;
-using Utilities.Observables;
+﻿using UnityEngine;
 
 namespace Editor.CssRect
 {
@@ -11,56 +6,61 @@ namespace Editor.CssRect
     {
         None,
         Block,
-        Inline,
-        Flex,
-        Grid,
-        Absolute,
-        Relative,
+        // Inline,
+        // Flex,
+        // Grid,
+        // Absolute,
+        // Relative,
     }
 
     public static class BoxDisplayExtensions
     {
-        public static Vector2 MinSize(this BoxDisplay boxDisplay, ObservableList<BoxRect> children)
+        public static Vector2 SizeFromChildren(this BoxDisplay boxDisplay, BoxRect target)
         {
-            return boxDisplay switch
-            {
-                BoxDisplay.Block => ComputeBlockLayout(children),
-                // TODO: Add Flex, Grid, Inline etc
-                _ => Vector2.zero
-            };
-        }
+            var width = 0f;
+            var height = 0f;
 
-        public static Rect MaxRect(this BoxDisplay boxDisplay, BoxRect parent)
-        {
-            return boxDisplay switch
-            {
-                _ => new()
-            };
-        }
+            var children = target.Children.Value;
 
-        public static void ComputeLayout(this BoxDisplay boxDisplay, ObservableList<BoxRect> children)
-        {
             switch (boxDisplay)
             {
                 case BoxDisplay.Block:
-                    ComputeBlockLayout(children, true);
+                    foreach (var child in children)
+                    {
+                        width = Mathf.Max(width, child.BoundsSize.Value.x);
+                        height += child.BoundsSize.Value.y;
+                    }
                     break;
             }
+
+            var rect = new Rect(new(), new Vector2(width, height));
+            var padding = target.Padding.Value.ApplyTo(rect, ResolveMode.Outer);
+            var align = target.Align.Value.ApplyTo(rect, ResolveMode.Outer);
+            var margin = target.Margin.Value.ApplyTo(new Rect(align, padding.size), ResolveMode.Outer);
+
+            return margin.size;
         }
 
-        private static Vector2 ComputeBlockLayout(ObservableList<BoxRect> children, bool updateChildren = false)
-         {
-             var width = 0f;
-             var height = 0f;
-             foreach (var child in children)
-             {
-                 width = Mathf.Max(width, child.Rect.Value.width);
-                 height += child.Rect.Value.height;
-             }
+        public static Vector2 PositionFromParent(this BoxDisplay boxDisplay, BoxRect target)
+        {
+            var parent = target.Parent.Value;
+            var siblings = parent.Children.Value;
 
-             return new Vector2(width, height);
-         }
+            var x = parent.RectPosition.Value.x;
+            var y = parent.RectPosition.Value.y;
+
+            switch (boxDisplay)
+            {
+                case BoxDisplay.Block:
+                    foreach (var sibling in siblings)
+                    {
+                        if (sibling == target) break;
+                        y += sibling.BoundsSize.Value.y;
+                    }
+                    break;
+            }
+
+            return new Vector2(x, y);
+        }
     }
-
-
 }

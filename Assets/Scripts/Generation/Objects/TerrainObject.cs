@@ -1,6 +1,7 @@
 ﻿using Generation.Data;
 using UnityEngine;
 using Utilities;
+using Utilities.Observables;
 
 namespace Generation.Objects
 {
@@ -10,8 +11,8 @@ namespace Generation.Objects
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
 
-        private readonly Property<Vector3> _position = new();
-        private readonly Property<float[,]> _heightmap = new();
+        private readonly ValueProperty<Vector3> _position = new();
+        private readonly ValueProperty<float[,]> _heightmap = new();
 
         protected override void Awake()
         {
@@ -19,15 +20,15 @@ namespace Generation.Objects
             _meshFilter = GetComponent<MeshFilter>();
             _meshRenderer = GetComponent<MeshRenderer>();
 
-            _position.AddListener((_, _, newValue) => transform.position = newValue);
-            _heightmap.AddListener((_, _, newValue) => GenerateTerrainMesh(newValue));
+            _position.AddListener((_, change) => transform.position = change.NewValue);
+            _heightmap.AddListener((_, change) => GenerateTerrainMesh(change.NewValue));
         }
 
-        protected override void OnDataChanged(Property<Entity> data, Entity oldData, Entity newData)
+        protected override void OnDataChanged(PropertyBase<Entity, Entity, ValueChange<Entity>> property, ValueChange<Entity> change)
         {
-            _position.BindBidirectional(newData.Position);
+            _position.BindBidirectional(change.NewValue.Position);
 
-            if (newData.TryGetProperty("Heightmap", out Property<float[,]> heightmap))
+            if (change.NewValue.TryGetProperty("Heightmap", out ValueProperty<float[,]> heightmap))
                 _heightmap.BindBidirectional(heightmap);
         }
 

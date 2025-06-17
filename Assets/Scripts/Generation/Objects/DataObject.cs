@@ -1,11 +1,12 @@
 ﻿using UnityEngine;
 using Utilities;
+using Utilities.Observables;
 
 namespace Generation.Data
 {
     public abstract class DataObject<TData> : MonoBehaviour
     {
-        public Property<TData> Data;
+        public ValueProperty<TData> Data;
 
         protected virtual void Awake()
         {
@@ -15,6 +16,6 @@ namespace Generation.Data
         /// <summary>
         /// Bind all data properties to instance properties
         /// </summary>
-        protected abstract void OnDataChanged(Property<TData> data, TData oldData, TData newData);
+        protected abstract void OnDataChanged(PropertyBase<TData, TData, ValueChange<TData>> property, ValueChange<TData> change);
     }
 }
