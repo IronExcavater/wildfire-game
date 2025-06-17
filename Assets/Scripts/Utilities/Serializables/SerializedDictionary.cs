@@ -21,6 +21,7 @@ namespace Utilities
         public abstract TValue GetValue(TKey key);
     }
 
+    [Serializable]
     public abstract class KeyValuePair<TKey, TValue>
     {
         public TKey Key;

@@ -14,17 +14,17 @@ namespace Utilities.Observables
             ObserveItems = observeItems;
         }
 
-        private void InnerSubscribe(T item)
+        protected void ItemSubscribe(T item)
         {
-            if (item is IObservable<T, ValueChange<T>> observable) observable.OnChanged += InnerChanged;
+            if (item is IObservable<T, ValueChange<T>> observable) observable.OnChanged += ItemChanged;
         }
 
-        private void InnerUnsubscribe(T item)
+        private void ItemUnsubscribe(T item)
         {
-            if (item is IObservable<T, ValueChange<T>> observable) observable.OnChanged -= InnerChanged;
+            if (item is IObservable<T, ValueChange<T>> observable) observable.OnChanged -= ItemChanged;
         }
 
-        private void InnerChanged(ValueChange<T> change)
+        private void ItemChanged(ValueChange<T> change)
         {
             if (!ObserveItems) return;
 
@@ -43,11 +43,11 @@ namespace Utilities.Observables
             get => Value[index];
             set
             {
-                InnerUnsubscribe(Value[index]);
+                ItemUnsubscribe(Value[index]);
                 var replaced = Value[index] != null;
 
                 Value[index] = value;
-                InnerSubscribe(value);
+                ItemSubscribe(value);
 
                 NotifyListeners(new ListChange<T>(
                     Value, replaced ? ListChangeType.Replace : ListChangeType.Add,
@@ -66,7 +66,7 @@ namespace Utilities.Observables
         public void Add(T item)
         {
             Value.Add(item);
-            InnerSubscribe(item);
+            ItemSubscribe(item);
 
             var index = Value.Count - 1;
             NotifyListeners(new ListChange<T>(
@@ -78,9 +78,9 @@ namespace Utilities.Observables
         public void AddRange(IEnumerable<T> items)
         {
             var added = new List<T>(items);
-            var from = Value.Count - 1;
+            var from = Value.Count;
             Value.AddRange(added);
-            added.ForEach(InnerSubscribe);
+            added.ForEach(ItemSubscribe);
 
             NotifyListeners(new ListChange<T>(
                 Value, ListChangeType.Add,
@@ -90,7 +90,7 @@ namespace Utilities.Observables
 
         public void Clear()
         {
-            Value.ForEach(InnerUnsubscribe);
+            Value.ForEach(ItemUnsubscribe);
 
             NotifyListeners(new ListChange<T>(
                 Value, ListChangeType.Remove,
@@ -104,7 +104,7 @@ namespace Utilities.Observables
         public void Insert(int index, T item)
         {
             Value.Insert(index, item);
-            InnerSubscribe(item);
+            ItemSubscribe(item);
 
             NotifyListeners(new ListChange<T>(
                 Value, ListChangeType.Add,
@@ -118,7 +118,7 @@ namespace Utilities.Observables
             var r = Value.Remove(item);
             if (r)
             {
-                InnerUnsubscribe(item);
+                ItemUnsubscribe(item);
 
                 NotifyListeners(new ListChange<T>(
                     Value, ListChangeType.Remove,
@@ -132,7 +132,7 @@ namespace Utilities.Observables
         public void RemoveAt(int index)
         {
             var item = Value[index];
-            InnerUnsubscribe(item);
+            ItemUnsubscribe(item);
             Value.RemoveAt(index);
 
             NotifyListeners(new ListChange<T>(
@@ -148,9 +148,9 @@ namespace Utilities.Observables
 
             var oldValue = Value;
 
-            oldValue?.ForEach(InnerUnsubscribe);
+            oldValue?.ForEach(ItemUnsubscribe);
             _value = newValue;
-            Value.ForEach(InnerSubscribe);
+            Value.ForEach(ItemSubscribe);
 
             var oldCount = oldValue?.Count ?? 0;
             var replaceTo = Math.Min(oldCount, newValue.Count);
@@ -168,18 +168,46 @@ namespace Utilities.Observables
                 replaceTo, maxTo,
                 Value.GetRange(replaceTo, isRemove ? maxTo - replaceTo + 1 : 0)
             ));
-
-            if (!IsUpdatingFromBinding && _boundTo != null)
-            {
-                _boundTo.IsUpdatingFromBinding = true;
-                _boundTo.Value = newValue;
-                _boundTo.IsUpdatingFromBinding = false;
-            }
         }
 
         protected override void BindChanged(PropertyBase<T, List<T>, ListChange<T>> other, ListChange<T> change)
         {
+            if (StopBindPropagation) return;
+            _boundTo.StopBindPropagation = true;
 
+            var otherList = change.GetList;
+
+            if (change.WasPermutated)
+            {
+                Value.ForEach(ItemUnsubscribe);
+
+                _value.Clear();
+                _value.AddRange(otherList);
+
+                Value.ForEach(ItemSubscribe);
+            }
+
+            change.GetRemoved.ForEach(item =>
+            {
+                ItemUnsubscribe(item);
+                _value.Remove(item);
+            });
+
+            if (change.WasAdded)
+                for (var i = change.From; i < change.To; i++)
+                {
+                    var item = otherList[i];
+                    _value.Insert(i, item);
+                    ItemSubscribe(item);
+                }
+
+            if (change.WasUpdated)
+                for (var i = change.From; i < change.To; i++)
+                    if (!EqualityComparer<T>.Default.Equals(_value[i], otherList[i]))
+                        _value[i] = otherList[i];
+
+            NotifyListeners(change);
+            _boundTo.StopBindPropagation = false;
         }
     }
 }

@@ -16,17 +16,26 @@ namespace Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            if (!PropertyValidation(property))
+            {
+                EditorGUI.LabelField(position, "⚠ [PolymorphicField] requires [SerializeReference] attribute to work!");
+                return;
+            }
+
             EditorGUI.BeginProperty(position, label, property);
 
-            var rect = new Rect(position.position, new(position.width, EditorGUIUtility.singleLineHeight));
-            var dropdownBox = new BoxRect(rect);
-            dropdownBox.Padding.Value = new BoxInsets(left: 6);
+            var size = new Vector2(position.width, EditorGUIUtility.singleLineHeight);
+
+            var dropdownBox = new BoxRect(position.position, position.width)
+            {
+                Padding = { Value = new BoxInsets(left: 6) }
+            };
 
             var baseType = fieldInfo.FieldType.GetBaseType();
 
             if (!_typeCaches.TryGetValue(baseType, out var subtypes))
             {
-                subtypes = baseType.GetSubtypes();
+                subtypes = baseType.GetSubtypes(type => !type.IsAbstract && !type.IsInterface);
                 _typeCaches[baseType] = subtypes;
             }
 
@@ -45,7 +54,7 @@ namespace Editor
 
             if (property.managedReferenceValue != null)
             {
-                var contentBox = new BoxRect(rect, property);
+                var contentBox = new BoxRect(position.position, position.width, property);
 
                 EditorGUI.PropertyField(contentBox.Rect.Value, property, GUIContent.none, true);
             }
@@ -57,13 +66,18 @@ namespace Editor
         {
             var height = EditorGUIUtility.singleLineHeight;
 
-            if (property.managedReferenceValue != null)
+            if (PropertyValidation(property) && property.managedReferenceValue != null)
             {
                 height += EditorGUI.GetPropertyHeight(property, true) + EditorGUIUtility.standardVerticalSpacing;
                 height -= EditorGUIUtility.singleLineHeight;
             }
 
             return height;
+        }
+
+        public bool PropertyValidation(SerializedProperty property)
+        {
+            return property.isInstantiatedPrefab && property.propertyType == SerializedPropertyType.ManagedReference;
         }
     }
 }

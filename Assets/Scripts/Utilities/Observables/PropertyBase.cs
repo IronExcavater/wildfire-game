@@ -12,7 +12,7 @@ namespace Utilities.Observables
 
         protected readonly List<Action<PropertyBase<T, TValue, TChange>, TChange>> _listeners = new();
         protected PropertyBase<T, TValue, TChange> _boundTo;
-        public bool IsUpdatingFromBinding;
+        public bool StopBindPropagation;
 
         protected PropertyBase(TValue initialValue = default)
         {
@@ -78,17 +78,17 @@ namespace Utilities.Observables
 
         protected abstract void BindChanged(PropertyBase<T, TValue, TChange> other, TChange change);
 
-        protected void InnerSubscribe()
+        protected void ValueSubscribe()
         {
-            if (Value is IObservable<T, TChange> observable) observable.OnChanged += InnerChanged;
+            if (Value is IObservable<T, TChange> observable) observable.OnChanged += ValueChanged;
         }
 
-        protected void InnerUnsubscribe()
+        protected void ValueUnsubscribe()
         {
-            if (Value is IObservable<T, TChange> observable) observable.OnChanged -= InnerChanged;
+            if (Value is IObservable<T, TChange> observable) observable.OnChanged -= ValueChanged;
         }
 
-        protected void InnerChanged(TChange change)
+        protected void ValueChanged(TChange change)
         {
             NotifyListeners(change);
         }

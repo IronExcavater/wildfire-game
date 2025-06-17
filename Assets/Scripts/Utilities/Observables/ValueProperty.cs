@@ -16,25 +16,22 @@ namespace Utilities
 
             var oldValue = Value;
 
-            InnerUnsubscribe();
+            ValueUnsubscribe();
             _value = newValue;
-            InnerSubscribe();
-
-            if (!IsUpdatingFromBinding && _boundTo != null)
-            {
-                _boundTo.IsUpdatingFromBinding = true;
-                _boundTo.Value = newValue;
-                _boundTo.IsUpdatingFromBinding = false;
-            }
+            ValueSubscribe();
 
             NotifyListeners(new ValueChange<T>(oldValue, newValue));
         }
 
         protected override void BindChanged(PropertyBase<T, T, ValueChange<T>> other, ValueChange<T> change)
         {
-            IsUpdatingFromBinding = true;
+            if (StopBindPropagation) return;
+
+            _boundTo.StopBindPropagation = true;
             Value = change.NewValue;
-            IsUpdatingFromBinding = false;
+
+            NotifyListeners(change);
+            _boundTo.StopBindPropagation = false;
         }
     }
 }

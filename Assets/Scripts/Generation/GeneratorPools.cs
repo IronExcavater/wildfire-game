@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using Utilities;
 using Utilities.Attributes;
 
 namespace Generation
@@ -7,6 +7,6 @@ namespace Generation
     [CreateAssetMenu(fileName = "GeneratorPools", menuName = "Generation/Generator Pools")]
     public class GeneratorPool : ScriptableObject
     {
-        [SerializeReference, PolymorphicField] public List<GeneratorPass> pools = new();
+        [SerializedDictionaryField] public SerializedObjectPoolDictionary pools = new();
     }
 }

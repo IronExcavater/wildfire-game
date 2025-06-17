@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 namespace Utilities
 {
@@ -12,10 +15,10 @@ namespace Utilities
         private readonly List<T> _prefabs;
         private readonly Transform _parent;
 
-        public ObjectPool(int initialSize, Transform parent = null, params T[] prefabs)
+        public ObjectPool(int initialSize = 0, Transform parent = null, params T[] prefabs)
         {
             if (prefabs == null || prefabs.Length == 0)
-                throw new System.ArgumentException("At least one prefab must be provided to the object pool.");
+                throw new ArgumentException("At least one prefab must be provided to the object pool.");
 
             _prefabs = new List<T>(prefabs);
             _parent = parent;
@@ -63,7 +66,6 @@ namespace Utilities
         public override string ToString()
         {
             var active = _objects.Count - _pool.Count;
-
             return $"ObjectPool<{typeof(T).Name}> {{Total: {_objects.Count}, Active: {active}, Inactive: {_pool.Count}}}";
         }
     }
