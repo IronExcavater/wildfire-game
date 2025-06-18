@@ -105,7 +105,7 @@ namespace Editor.CssRect
 
                         var siblingSize = sibling.BoundsSize.Value;
 
-                        if (lineWidth + siblingSize.x > parent.RectSize.Value.x && lineWidth > 0f)
+                        if (lineWidth + siblingSize.x > parent.MaxWidth.Value && lineWidth > 0f)
                         {
                             y += lineHeight;
 
@@ -114,7 +114,7 @@ namespace Editor.CssRect
                         }
 
                         lineWidth += siblingSize.x;
-                        lineHeight = Mathf.Max(lineHeight, siblingSize.y);
+                        lineHeight = Math.Max(lineHeight, siblingSize.y);
                     }
 
                     x += lineWidth;

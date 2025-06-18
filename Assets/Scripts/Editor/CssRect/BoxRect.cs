@@ -1,30 +1,33 @@
 ﻿using System;
 using UnityEditor;
 using UnityEngine;
-using Utilities;
 using Utilities.Observables;
 
 namespace Editor.CssRect
 {
     public class BoxRect : IObservable<BoxRect, ValueChange<BoxRect>>
     {
-        public readonly ValueProperty<BoxRect> Parent = new();
+        public readonly Property<BoxRect> Parent = new(observeInnerValue: false);
         public readonly ObservableList<BoxRect> Children = new();
-        public readonly ValueProperty<SerializedProperty> Property = new();
+        public readonly Property<SerializedProperty> Property = new();
 
-        public readonly ValueProperty<Vector2> BoundsPosition = new();
-        public readonly ValueProperty<Vector2> BoundsSize = new();
-        public readonly ValueProperty<Rect> Bounds = new();
+        public readonly Property<Vector2> ContainerPosition = new();
+        public readonly Property<Vector2> ContainerSize = new();
+        public readonly Property<Rect> Container = new();
 
-        public readonly ValueProperty<Vector2> RectPosition = new();
-        public readonly ValueProperty<Vector2> RectSize = new();
-        public readonly ValueProperty<Rect> Rect = new();
+        public readonly Property<Vector2> BoundsPosition = new();
+        public readonly Property<Vector2> BoundsSize = new();
+        public readonly Property<Rect> Bounds = new();
 
-        public readonly ValueProperty<float> MaxWidth = new();
-        public readonly ValueProperty<BoxInsets> Margin = new();
-        public readonly ValueProperty<BoxInsets> Padding = new();
-        public readonly ValueProperty<BoxAlign> Align = new();
-        public readonly ValueProperty<BoxDisplay> Display = new();
+        public readonly Property<Vector2> RectPosition = new();
+        public readonly Property<Vector2> RectSize = new();
+        public readonly Property<Rect> Rect = new();
+
+        public readonly Property<float> MaxWidth = new();
+        public readonly Property<BoxInsets> Margin = new();
+        public readonly Property<BoxInsets> Padding = new();
+        public readonly Property<BoxAlign> Align = new();
+        public readonly Property<BoxDisplay> Display = new();
 
         public BoxRect(Vector2 position, float maxWidth, SerializedProperty property = null)
         {
@@ -76,15 +79,20 @@ namespace Editor.CssRect
 
                 OnChanged?.Invoke(new ValueChange<BoxRect>(this, this));
             });
-            Children.AddListener((_, _) =>
+            Children.AddListener((_, change) =>
             {
                 IsChildrenAndPropertyValid();
 
-                // TODO: Stop infinite loop between parent and child. Diagnose where the unwanted link (hopefully
-                //  doesn't require redesign and is just incorrect implementation). Investigate ObservableList OnChange
-                //  and UpdateBoundsSize()
-                // UpdateBoundsSize();
-                //OnChanged?.Invoke(new ValueChange<BoxRect>(this, this));
+                foreach (var child in change.GetAdded)
+                {
+                    child.BoundsSize.AddListener(UpdateSizeFromChildrenListener);
+                    UpdateBoundsSize();
+                }
+
+                foreach (var child in change.GetRemoved)
+                    child.BoundsSize.RemoveListener(UpdateSizeFromChildrenListener);
+
+                OnChanged?.Invoke(new ValueChange<BoxRect>(this, this));
             });
             Property.AddListener((_, _) =>
             {
@@ -129,6 +137,12 @@ namespace Editor.CssRect
             OnChanged?.Invoke(new ValueChange<BoxRect>(this, this));
         }
 
+        private void UpdateSizeFromChildrenListener(PropertyBase<Vector2, Vector2, ValueChange<Vector2>> property,
+            ValueChange<Vector2> change)
+        {
+            UpdateBoundsSize();
+        }
+
         private void UpdateBoundsListener(PropertyBase<Vector2, Vector2, ValueChange<Vector2>> property,
             ValueChange<Vector2> change)
         {
@@ -155,9 +169,9 @@ namespace Editor.CssRect
 
         private void UpdateRect()
         {
-            var margin = Margin.Value.ApplyTo(Bounds.Value);
-            var align = Align.Value.ApplyTo(margin);
-            var padding = Padding.Value.ApplyTo(new Rect(align, margin.size));
+            var align = Align.Value.ApplyTo(Bounds.Value);
+            var margin = Margin.Value.ApplyTo(new Rect(align, Bounds.Value.size));
+            var padding = Padding.Value.ApplyTo(margin);
 
             RectPosition.Value = padding.position;
             RectSize.Value = padding.size;

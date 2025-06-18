@@ -50,7 +50,7 @@ namespace Utilities.Observables
 
         public T GetPermutation(int index) => _list[Math.Clamp(index, From, To)];
 
-        public List<T> GetAdded => WasAdded ? _list.GetRange(From, To) : new List<T>();
+        public List<T> GetAdded => WasAdded ? _list.GetRange(From, To - From) : new List<T>();
 
         public List<T> GetRemoved => _removedList;
     }

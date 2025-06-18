@@ -1,32 +1,26 @@
 ﻿using System;
 using Generation.Data;
-using UnityEngine;
-using Utilities;
 
-namespace Generation
+namespace Generation.Passes
 {
     [Serializable]
-    public class TerrainPass : GeneratorPass
+    public class FoliagePass : GeneratorPass
     {
-        public int amplitude = 0;
-
-        public TerrainPass() { }
-
         public override void Apply(World world)
         {
-            var chunkSize = WorldGenerator.ChunkSize;
+            /*var chunkSize = WorldGenerator.ChunkSize;
 
             foreach (var chunk in world.Chunks.Values)
             {
-                if (!chunk.TryGetEntityOfType(typeof(Terrain), out var terrain))
+                if (!chunk.TryGetEntityOfType(typeof(Terrain), out Property<Entity> terrain))
                 {
-                    terrain = new ValueProperty<Entity>(new Entity(typeof(Terrain)));
+                    terrain = new Property<Entity>(new Entity(typeof(Terrain)));
                     chunk.AddEntity(terrain);
                 }
 
-                if (!terrain.Value.TryGetProperty("Heightmap", out ValueProperty<float[,]> heightmap))
+                if (!terrain.Value.TryGetProperty("Heightmap", out Property<float[,]> heightmap))
                 {
-                    heightmap = new ValueProperty<float[,]>(new float[chunkSize, chunkSize]);
+                    heightmap = new Property<float[,]>(new float[chunkSize, chunkSize]);
                     terrain.Value.AddProperty("Heightmap", heightmap);
                 }
 
@@ -37,7 +31,7 @@ namespace Generation
                     var ny = chunk.Position.y * chunkSize + y;
                     heightmap.Value[x, y] += Mathf.PerlinNoise(nx, ny);
                 }
-            }
+            }*/
         }
     }
 }

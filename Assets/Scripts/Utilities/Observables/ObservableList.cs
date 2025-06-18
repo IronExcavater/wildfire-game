@@ -6,13 +6,8 @@ namespace Utilities.Observables
 {
     public class ObservableList<T> : PropertyBase<T, List<T>, ListChange<T>>, IList<T>
     {
-        public bool ObserveItems;
-
-        public ObservableList(bool observeItems = true)
-        {
-            Value = new();
-            ObserveItems = observeItems;
-        }
+        public ObservableList(bool observeInnerValue = true)
+            : base(new(), observeInnerValue) { }
 
         protected void ItemSubscribe(T item)
         {
@@ -26,7 +21,7 @@ namespace Utilities.Observables
 
         private void ItemChanged(ValueChange<T> change)
         {
-            if (!ObserveItems) return;
+            if (!ObserveInnerValue) return;
 
             var index = Value.IndexOf(change.OldValue);
             NotifyListeners(new ListChange<T>(

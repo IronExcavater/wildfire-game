@@ -1,7 +1,7 @@
 ﻿using System;
 using Generation.Data;
 
-namespace Generation
+namespace Generation.Passes
 {
     [Serializable]
     public abstract class GeneratorPass

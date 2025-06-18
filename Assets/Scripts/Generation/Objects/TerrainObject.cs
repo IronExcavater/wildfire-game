@@ -1,6 +1,5 @@
 ﻿using Generation.Data;
 using UnityEngine;
-using Utilities;
 using Utilities.Observables;
 
 namespace Generation.Objects
@@ -11,8 +10,8 @@ namespace Generation.Objects
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
 
-        private readonly ValueProperty<Vector3> _position = new();
-        private readonly ValueProperty<float[,]> _heightmap = new();
+        private readonly Property<Vector3> _position = new();
+        private readonly Property<float[,]> _heightmap = new();
 
         protected override void Awake()
         {
@@ -28,7 +27,7 @@ namespace Generation.Objects
         {
             _position.BindBidirectional(change.NewValue.Position);
 
-            if (change.NewValue.TryGetProperty("Heightmap", out ValueProperty<float[,]> heightmap))
+            if (change.NewValue.TryGetProperty("Heightmap", out Property<float[,]> heightmap))
                 _heightmap.BindBidirectional(heightmap);
         }
 

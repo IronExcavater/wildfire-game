@@ -29,48 +29,55 @@ namespace Editor
             for (var i = 0; i < entriesProp.arraySize; i++)
             {
                 var entryProp = entriesProp.GetArrayElementAtIndex(i);
-                var entryBox = new BoxRect(entriesBox, entryProp);
+                var entryBox = new BoxRect(entriesBox);
 
-                EditorGUI.PropertyField(entryBox.Rect.Value, entryProp, GUIContent.none, true);
+                //EditorGUI.PropertyField(entryBox.Rect.Value, entryProp, GUIContent.none, true);
 
-                /*var keyProp = entryProp.FindPropertyRelative("Key");
-                var keyBox = new BoxRect(entryBox, size, keyProp);
+                var keyProp = entryProp.FindPropertyRelative("Key");
+                var keyBox = new BoxRect(entryBox, keyProp);
 
                 var valueProp = entryProp.FindPropertyRelative("Value");
-                var valueBox = new BoxRect(entryBox, size, valueProp);
+                var valueBox = new BoxRect(entryBox, valueProp);
 
-                EditorGUI.PropertyField(keyBox.Rect.Value, keyProp, GUIContent.none);
-                EditorGUI.PropertyField(valueBox.Rect.Value, valueProp, GUIContent.none);*/
+                EditorGUI.PropertyField(keyBox.Rect.Value, keyProp, GUIContent.none, true);
+                EditorGUI.PropertyField(valueBox.Rect.Value, valueProp, GUIContent.none, true);
             }
 
             var buttonsBox = new BoxRect(wrapperBox)
             {
-                Align = { Value = new BoxAlign(0.6f) },
-                Display = { Value = BoxDisplay.Inline }
+                Align = { Value = new BoxAlign(1f) },
+                //Display = { Value = BoxDisplay.Inline }
             };
 
             var addButtonBox = new BoxRect(buttonsBox, width: 30);
             var minusButtonBox = new BoxRect(buttonsBox, width: 30);
 
+            EditorGUI.DrawRect(buttonsBox.Bounds.Value, Color.red);
+            EditorGUI.DrawRect(buttonsBox.Rect.Value, Color.blue);
+
             if (GUI.Button(addButtonBox.Rect.Value, "+"))
-            {
-                Debug.Log("Pressed +");
                 entriesProp.InsertArrayElementAtIndex(entriesProp.arraySize);
-            }
             if (GUI.Button(minusButtonBox.Rect.Value, "-") && entriesProp.arraySize > 0)
                 entriesProp.DeleteArrayElementAtIndex(entriesProp.arraySize - 1);
-
-            EditorGUI.DrawRect(wrapperBox.Rect.Value, Color.red);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            var height = EditorGUIUtility.singleLineHeight;
+            var height = EditorGUIUtility.singleLineHeight * 2;
 
             if (PropertyValidation(property))
             {
-                var entries = property.FindPropertyRelative("entries");
-                height += entries.arraySize * (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing);
+                var entriesProp = property.FindPropertyRelative("entries");
+
+                for (var i = 0; i < entriesProp.arraySize; i++)
+                {
+                    var entryProp = entriesProp.GetArrayElementAtIndex(i);
+                    var keyProp = entryProp.FindPropertyRelative("Key");
+                    var valueProp = entryProp.FindPropertyRelative("Value");
+
+                    height += EditorGUI.GetPropertyHeight(keyProp, true);
+                    height += EditorGUI.GetPropertyHeight(valueProp, true);
+                }
             }
 
             return height;

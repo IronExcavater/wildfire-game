@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Generation.Passes;
 using UnityEngine;
 
 namespace Generation.Data

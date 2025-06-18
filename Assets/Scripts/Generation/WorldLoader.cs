@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Generation.Data;
+using Generation.Objects;
 using UnityEngine;
 using Utilities;
 
@@ -18,11 +19,11 @@ namespace Generation
 
         private Camera _camera;
 
-        /*public void AddPool<T>(params T[] prefabs) where T : DataObject<Entity>
+        public void AddPool<T>(params T[] prefabs) where T : DataObject<Entity>
         {
             var pool = new ObjectPool<T>(10, transform, prefabs);
             _pools.Add(typeof(T), pool);
-        }*/
+        }
 
         public ObjectPool<DataObject<Entity>> GetPool(System.Type type)
         {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Generation.Data;
+using Generation.Passes;
 using UnityEngine;
 using Utilities;
 

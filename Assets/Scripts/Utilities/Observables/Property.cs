@@ -1,14 +1,11 @@
 ﻿using System.Collections.Generic;
-using Utilities.Observables;
 
-namespace Utilities
+namespace Utilities.Observables
 {
-    public class ValueProperty<T> : PropertyBase<T, T, ValueChange<T>>
+    public class Property<T> : PropertyBase<T, T, ValueChange<T>>
     {
-        public ValueProperty(T initialValue = default)
-        {
-            Value = initialValue;
-        }
+        public Property(T initialValue = default, bool observeInnerValue = true)
+            : base(initialValue, observeInnerValue) { }
 
         public override void SetValue(T newValue)
         {

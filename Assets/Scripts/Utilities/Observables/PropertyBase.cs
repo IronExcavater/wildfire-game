@@ -12,11 +12,14 @@ namespace Utilities.Observables
 
         protected readonly List<Action<PropertyBase<T, TValue, TChange>, TChange>> _listeners = new();
         protected PropertyBase<T, TValue, TChange> _boundTo;
-        public bool StopBindPropagation;
 
-        protected PropertyBase(TValue initialValue = default)
+        public bool StopBindPropagation;
+        public bool ObserveInnerValue;
+
+        protected PropertyBase(TValue initialValue = default, bool observeInnerValue = true)
         {
             _value = initialValue;
+            ObserveInnerValue = observeInnerValue;
         }
 
         public TValue Value
@@ -90,6 +93,7 @@ namespace Utilities.Observables
 
         protected void ValueChanged(TChange change)
         {
+            if (!ObserveInnerValue) return;
             NotifyListeners(change);
         }
 
