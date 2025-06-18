@@ -17,8 +17,10 @@ namespace Editor
                 return;
             }
 
-
-            var wrapperBox = new BoxRect(position.position, position.width);
+            var wrapperBox = new BoxRect(position.position, new(position.width, 0))
+            {
+                Gap = { Value = new BoxGap(0, 10) }
+            };
 
             var labelBox = new BoxRect(wrapperBox);
             EditorGUI.LabelField(labelBox.Rect.Value, label, EditorStyles.boldLabel);
@@ -30,8 +32,6 @@ namespace Editor
             {
                 var entryProp = entriesProp.GetArrayElementAtIndex(i);
                 var entryBox = new BoxRect(entriesBox);
-
-                //EditorGUI.PropertyField(entryBox.Rect.Value, entryProp, GUIContent.none, true);
 
                 var keyProp = entryProp.FindPropertyRelative("Key");
                 var keyBox = new BoxRect(entryBox, keyProp);
@@ -45,15 +45,12 @@ namespace Editor
 
             var buttonsBox = new BoxRect(wrapperBox)
             {
-                Align = { Value = new BoxAlign(1f) },
-                //Display = { Value = BoxDisplay.Inline }
+                Align = { Value = new BoxAlign(100) },
+                Display = { Value = BoxDisplay.Inline }
             };
 
             var addButtonBox = new BoxRect(buttonsBox, width: 30);
             var minusButtonBox = new BoxRect(buttonsBox, width: 30);
-
-            EditorGUI.DrawRect(buttonsBox.Bounds.Value, Color.red);
-            EditorGUI.DrawRect(buttonsBox.Rect.Value, Color.blue);
 
             if (GUI.Button(addButtonBox.Rect.Value, "+"))
                 entriesProp.InsertArrayElementAtIndex(entriesProp.arraySize);

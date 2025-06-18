@@ -26,7 +26,7 @@ namespace Editor
 
             var size = new Vector2(position.width, EditorGUIUtility.singleLineHeight);
 
-            var dropdownBox = new BoxRect(position.position, position.width)
+            var dropdownBox = new BoxRect(position.position, new(position.width, EditorGUIUtility.singleLineHeight))
             {
                 Padding = { Value = new BoxInsets(left: 6) }
             };
@@ -54,7 +54,7 @@ namespace Editor
 
             if (property.managedReferenceValue != null)
             {
-                var contentBox = new BoxRect(position.position, position.width, property);
+                var contentBox = new BoxRect(position.position, new(position.width, 0), property);
 
                 EditorGUI.PropertyField(contentBox.Rect.Value, property, GUIContent.none, true);
             }
@@ -77,7 +77,7 @@ namespace Editor
 
         public bool PropertyValidation(SerializedProperty property)
         {
-            return property.isInstantiatedPrefab && property.propertyType == SerializedPropertyType.ManagedReference;
+            return property.propertyType == SerializedPropertyType.ManagedReference;
         }
     }
 }

@@ -19,13 +19,13 @@ namespace Editor.CssRect
             if (mode == ResolveMode.Inner)
                 return Unit switch
                 {
-                    Unit.Percent => -size * Value,
-                    _ => -Value
+                    Unit.Percent => size * Value / 100,
+                    _ => Value
                 };
             return Unit switch
             {
-                Unit.Percent => size * Value / (1 - Value),
-                _ => Value
+                Unit.Percent => -(size * (Value / 100) / (1 - (Value / 100))),
+                _ => -Value
             };
         }
         public static implicit operator BoxValue(float value) => new(value);

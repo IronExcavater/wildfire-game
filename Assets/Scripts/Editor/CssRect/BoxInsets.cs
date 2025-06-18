@@ -48,10 +48,10 @@ namespace Editor.CssRect
         {
             var insets = Resolve(rect.size, mode);
             return new Rect(
-                rect.position.x - insets.w,
-                rect.position.y - insets.x,
-                rect.size.x + insets.w + insets.y,
-                rect.size.y + insets.x + insets.z
+                rect.position.x + insets.w,
+                rect.position.y + insets.x,
+                rect.size.x - insets.w - insets.y,
+                rect.size.y - insets.x - insets.z
             );
         }
     }

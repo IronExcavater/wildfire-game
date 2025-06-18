@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Editor.CssRect
 {
@@ -9,18 +10,18 @@ namespace Editor.CssRect
 
         public BoxAlign(float horizontal = 0f, float vertical = 0f)
         {
-            Horizontal = new(horizontal, Unit.Percent);
-            Vertical = new(vertical, Unit.Percent);
+            Horizontal = new(Math.Clamp(horizontal, 0, 100), Unit.Percent);
+            Vertical = new(Math.Clamp(vertical, 0, 100), Unit.Percent);
         }
 
-        public Vector2 ApplyTo(Rect rect, ResolveMode mode = ResolveMode.Inner)
+        public Vector2 ApplyTo(Rect container, Vector2 contentSize, ResolveMode mode = ResolveMode.Inner)
         {
             return new Vector2(
-                rect.x - Horizontal.Resolve(rect.width, mode),
-                rect.y - Vertical.Resolve(rect.height, mode)
+                container.x + Horizontal.Resolve(container.width, mode) - contentSize.x * Anchor.x,
+                container.y + Vertical.Resolve(container.height, mode) - contentSize.y * Anchor.y
             );
         }
 
-        public Vector2 Anchor => new(-Horizontal.Resolve(1), -Vertical.Resolve(1));
+        public Vector2 Anchor => new(Horizontal.Resolve(1), Vertical.Resolve(1));
     }
 }
