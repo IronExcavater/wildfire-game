@@ -1,4 +1,5 @@
 ﻿using System;
+using Editor.Utilities;
 using UnityEditor;
 using UnityEngine;
 using Utilities.Observables;
@@ -45,7 +46,7 @@ namespace Editor.CssRect
             InitalizeListeners();
             BoundsSize.Value = new Vector2(
                 width ?? parent.RectSize.Value.x,
-                height ?? EditorGUIUtility.singleLineHeight
+                height ?? Utils.LineHeight
             );
             Parent.Value = parent;
             MinSize.Value = minSize ?? BoundsSize.Value;
@@ -56,7 +57,7 @@ namespace Editor.CssRect
             InitalizeListeners();
             BoundsSize.Value = new Vector2(
                 width ?? parent.RectSize.Value.x,
-                EditorGUIUtility.singleLineHeight
+                Utils.LineHeight
             );
             Parent.Value = parent;
             Property.Value = property;
@@ -81,19 +82,9 @@ namespace Editor.CssRect
 
                 InvokeOnChanged();
             });
-            Children.AddListener((_, change) =>
+            Children.AddListener((_, _) =>
             {
                 IsChildrenAndPropertyValid();
-
-                /*foreach (var child in change.GetAdded)
-                {
-                    child.BoundsSize.AddListener(UpdateSizeFromChildrenListener);
-                    UpdateBoundsSize();
-                }
-
-                foreach (var child in change.GetRemoved)
-                    child.BoundsSize.RemoveListener(UpdateSizeFromChildrenListener);*/
-
                 UpdateBoundsSize();
                 InvokeOnChanged();
             });
@@ -202,13 +193,6 @@ namespace Editor.CssRect
             BoundsPosition.Value = Align.Value.ApplyTo(Container.Value, BoundsSize.Value);
         }
 
-        private void UpdateSizeFromChildrenListener(PropertyBase<Vector2, Vector2, ValueChange<Vector2>> property,
-            ValueChange<Vector2> change)
-        {
-            UpdateBoundsSize();
-            InvokeOnChanged();
-        }
-
         private void UpdateBoundsSize()
         {
             BoundsSize.Value =
@@ -237,6 +221,13 @@ namespace Editor.CssRect
         {
             Rect.Value = new Rect(RectPosition.Value, RectSize.Value);
             InvokeOnChanged();
+        }
+
+        public void DebugRect()
+        {
+            EditorGUI.DrawRect(Container.Value, Color.red);
+            EditorGUI.DrawRect(Bounds.Value, Color.orange);
+            EditorGUI.DrawRect(Rect.Value, Color.yellow);
         }
 
         /// <summary>

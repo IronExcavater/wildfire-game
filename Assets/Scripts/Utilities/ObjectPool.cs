@@ -10,6 +10,7 @@ namespace Utilities
 
     public class ObjectPool<T> : IObjectPool where T : MonoBehaviour
     {
+        public Type Type => typeof(T);
         private readonly List<T> _objects = new();
         private readonly Queue<T> _pool = new();
         private readonly List<T> _prefabs;

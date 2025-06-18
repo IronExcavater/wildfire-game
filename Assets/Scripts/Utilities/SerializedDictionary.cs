@@ -17,8 +17,6 @@ namespace Utilities
             _dictionary = new Dictionary<TKey, TValue>();
             foreach (var entry in entries) _dictionary.TryAdd(entry.Key, entry.Value);
         }
-
-        public abstract TValue GetValue(TKey key);
     }
 
     [Serializable]

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Editor.Utilities;
+using UnityEngine;
 
 namespace Editor.CssRect
 {
@@ -7,7 +8,7 @@ namespace Editor.CssRect
         public readonly BoxValue Horizontal;
         public readonly BoxValue Vertical;
 
-        public BoxGap(float horizontal = 0, float vertical = 0)
+        public BoxGap(float horizontal = Utils.SmallGap, float vertical = Utils.SmallGap)
         {
             Horizontal = new BoxValue(horizontal);
             Vertical = new BoxValue(vertical);

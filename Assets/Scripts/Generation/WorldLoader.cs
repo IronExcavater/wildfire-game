@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Generation.Data;
 using Generation.Objects;
 using UnityEngine;
@@ -15,6 +16,10 @@ namespace Generation
         public static float CheckInterval => Instance._checkInterval;
 
         private Dictionary<System.Type, IObjectPool> _pools = new();
+        public IReadOnlyDictionary<System.Type, IObjectPool> Pools => _pools;
+
+        [SerializeField] private GeneratorPools _generatorPools;
+
         private readonly Dictionary<Vector2Int, List<DataObject<Entity>>> _instances = new();
 
         private Camera _camera;
@@ -101,6 +106,26 @@ namespace Generation
         protected override void Awake()
         {
             base.Awake();
+            if (_generatorPools)
+            {
+                foreach (var kvp in _generatorPools.pools.Dictionary)
+                {
+                    var (type, objectPool) = TransformEntry(kvp.Key, kvp.Value);
+                    _pools[type] = objectPool;
+                }
+            }
+        }
+
+        private (Type, IObjectPool) TransformEntry(string key, List<GameObject> value)
+        {
+            var type = Type.GetType(key);
+
+            var poolType = typeof(ObjectPool<>).MakeGenericType(type);
+            var constructor = poolType.GetConstructor(new[] { typeof(int), typeof(Transform), typeof(GameObject[]) });
+
+            var poolInstance = constructor?.Invoke(new object[] { 10, null, value.ToArray() });
+
+            return (type, (IObjectPool)poolInstance);
         }
 
         private void Update()

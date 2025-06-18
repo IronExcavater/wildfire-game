@@ -1,26 +1,27 @@
 ﻿using Editor.CssRect;
+using Editor.Utilities;
 using UnityEditor;
 using UnityEngine;
 using Utilities;
 using Utilities.Attributes;
+using Utils = Editor.Utilities.Utils;
 
-namespace Editor
+namespace Editor.Drawers
 {
     [CustomPropertyDrawer(typeof(SerializedDictionaryFieldAttribute))]
     public class SerializedDictionaryDrawer : PropertyDrawer
     {
+        private SerializedDictionaryValidator _validator = new();
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (!PropertyValidation(property))
+            if (!PropertyValidation())
             {
                 EditorGUI.LabelField(position, $"⚠ {fieldInfo.FieldType} must inherit SerializedDictionary<,,> to use [SerializedDictionaryField]!");
                 return;
             }
 
-            var wrapperBox = new BoxRect(position.position, new(position.width, 0))
-            {
-                Gap = { Value = new BoxGap(0, 10) }
-            };
+            var wrapperBox = new BoxRect(position.position, new(position.width, 0));
 
             var labelBox = new BoxRect(wrapperBox);
             EditorGUI.LabelField(labelBox.Rect.Value, label, EditorStyles.boldLabel);
@@ -33,11 +34,16 @@ namespace Editor
                 var entryProp = entriesProp.GetArrayElementAtIndex(i);
                 var entryBox = new BoxRect(entriesBox);
 
+                var errorBox = new BoxRect(entryBox, Utils.LineHeight * 2);
+
                 var keyProp = entryProp.FindPropertyRelative("Key");
                 var keyBox = new BoxRect(entryBox, keyProp);
 
                 var valueProp = entryProp.FindPropertyRelative("Value");
                 var valueBox = new BoxRect(entryBox, valueProp);
+
+                _validator.ValidateEntry(property, keyProp, valueProp, out var message, out var messageType);
+                if (!string.IsNullOrEmpty(message)) EditorGUI.HelpBox(errorBox.Rect.Value, message, messageType);
 
                 EditorGUI.PropertyField(keyBox.Rect.Value, keyProp, GUIContent.none, true);
                 EditorGUI.PropertyField(valueBox.Rect.Value, valueProp, GUIContent.none, true);
@@ -60,9 +66,9 @@ namespace Editor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            var height = EditorGUIUtility.singleLineHeight * 2;
+            var height = Utils.LineHeight * 2 + Utils.LargeGap;
 
-            if (PropertyValidation(property))
+            if (PropertyValidation())
             {
                 var entriesProp = property.FindPropertyRelative("entries");
 
@@ -72,15 +78,22 @@ namespace Editor
                     var keyProp = entryProp.FindPropertyRelative("Key");
                     var valueProp = entryProp.FindPropertyRelative("Value");
 
+                    _validator.ValidateEntry(property, keyProp, valueProp, out var message, out _);
+                    if (!string.IsNullOrEmpty(message))
+                        height += Utils.LineHeight * 2 + Utils.LargeGap;
+
                     height += EditorGUI.GetPropertyHeight(keyProp, true);
                     height += EditorGUI.GetPropertyHeight(valueProp, true);
+                    height += Utils.LargeGap;
+
+                    if (i < entriesProp.arraySize - 1) height += Utils.LargeGap;
                 }
             }
 
             return height;
         }
 
-        public bool PropertyValidation(SerializedProperty property)
+        public bool PropertyValidation()
         {
             var fieldType = fieldInfo.FieldType;
             while (fieldType != null)

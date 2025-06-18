@@ -12,7 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 394e06cebe2c4caf8e6e4aa12cd8a1f2, type: 3}
   m_Name: GeneratorPasses
   m_EditorClassIdentifier: 
-  passes: []
+  passes:
+  - rid: 9081719070237393063
+  - rid: -2
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 9081719070237393063
+      type: {class: FoliagePass, ns: Generation.Passes, asm: Assembly-CSharp}
+      data: 

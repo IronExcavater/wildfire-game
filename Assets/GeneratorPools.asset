@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5338570343024a66974196682f325d6f, type: 3}
   m_Name: GeneratorPools
   m_EditorClassIdentifier: 
-  pools: []
-  references:
-    version: 2
-    RefIds: []
+  pools:
+    entries:
+    - Key: Generation.Objects.TerrainObject
+      Value: []
+    - Key: Generation.Objects.TerrainObject
+      Value: []

@@ -7,7 +7,7 @@ using UnityEngine;
 using Utilities;
 using Utilities.Attributes;
 
-namespace Editor
+namespace Editor.Drawers
 {
     [CustomPropertyDrawer(typeof(PolymorphicFieldAttribute))]
     public class PolymorphicFieldDrawer : PropertyDrawer
@@ -23,8 +23,6 @@ namespace Editor
             }
 
             EditorGUI.BeginProperty(position, label, property);
-
-            var size = new Vector2(position.width, EditorGUIUtility.singleLineHeight);
 
             var dropdownBox = new BoxRect(position.position, new(position.width, EditorGUIUtility.singleLineHeight))
             {
