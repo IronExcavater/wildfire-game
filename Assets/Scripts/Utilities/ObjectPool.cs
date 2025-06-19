@@ -6,7 +6,11 @@ using Random = UnityEngine.Random;
 
 namespace Utilities
 {
-    public interface IObjectPool {}
+    public interface IObjectPool
+    {
+        Object Get();
+        void Release(Object obj);
+    }
 
     public class ObjectPool<T> : IObjectPool where T : MonoBehaviour
     {
@@ -24,35 +28,35 @@ namespace Utilities
             _prefabs = new List<T>(prefabs);
             _parent = parent;
 
-            for (var i = 0; i < initialSize; i++)
-            {
-                var obj = Object.Instantiate(prefabs[i % _prefabs.Count], parent);
-                obj.gameObject.SetActive(false);
-                _pool.Enqueue(obj);
-            }
+            for (var i = 0; i < initialSize; i++) Instantiate();
         }
 
         private T Instantiate()
         {
-            var obj = Object.Instantiate(_prefabs[Random.Range(0, _prefabs.Count)], _parent);
-            _objects.Add(obj);
-            _pool.Enqueue(obj);
-            return obj;
+            var mono = Object.Instantiate(_prefabs[Random.Range(0, _prefabs.Count)], _parent);
+            _objects.Add(mono);
+            _pool.Enqueue(mono);
+            mono.gameObject.SetActive(false);
+            return mono;
         }
 
-        public T Get()
+        public Object Get() => GetTyped();
+
+        public T GetTyped()
         {
             if (_pool.Count <= 0) Instantiate();
-            var obj = _pool.Dequeue();
+            var mono = _pool.Dequeue();
 
-            obj.gameObject.SetActive(true);
-            return obj;
+            mono.gameObject.SetActive(true);
+            return mono;
         }
 
-        public void Release(T obj)
+        public void Release(Object obj) => Release((T)obj);
+
+        public void Release(T mono)
         {
-            obj.gameObject.SetActive(false);
-            _pool.Enqueue(obj);
+            mono.gameObject.SetActive(false);
+            _pool.Enqueue(mono);
         }
 
         public void Clear()

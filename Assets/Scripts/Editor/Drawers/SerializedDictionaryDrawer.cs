@@ -32,19 +32,18 @@ namespace Editor.Drawers
             for (var i = 0; i < entriesProp.arraySize; i++)
             {
                 var entryProp = entriesProp.GetArrayElementAtIndex(i);
-                var entryBox = new BoxRect(entriesBox);
-
-                var errorBox = new BoxRect(entryBox, Utils.LineHeight * 2);
-
                 var keyProp = entryProp.FindPropertyRelative("Key");
-                var keyBox = new BoxRect(entryBox, keyProp);
-
                 var valueProp = entryProp.FindPropertyRelative("Value");
-                var valueBox = new BoxRect(entryBox, valueProp);
 
                 _validator.ValidateEntry(property, keyProp, valueProp, out var message, out var messageType);
-                if (!string.IsNullOrEmpty(message)) EditorGUI.HelpBox(errorBox.Rect.Value, message, messageType);
+                var hasError = !string.IsNullOrEmpty(message);
 
+                var entryBox = new BoxRect(entriesBox);
+                var errorBox = hasError ? new BoxRect(entryBox, Utils.LineHeight * 2) : null;
+                var keyBox = new BoxRect(entryBox, keyProp);
+                var valueBox = new BoxRect(entryBox, valueProp);
+
+                if (hasError) EditorGUI.HelpBox(errorBox.Rect.Value, message, messageType);
                 EditorGUI.PropertyField(keyBox.Rect.Value, keyProp, GUIContent.none, true);
                 EditorGUI.PropertyField(valueBox.Rect.Value, valueProp, GUIContent.none, true);
             }
@@ -79,8 +78,8 @@ namespace Editor.Drawers
                     var valueProp = entryProp.FindPropertyRelative("Value");
 
                     _validator.ValidateEntry(property, keyProp, valueProp, out var message, out _);
-                    if (!string.IsNullOrEmpty(message))
-                        height += Utils.LineHeight * 2 + Utils.LargeGap;
+                    var hasError = !string.IsNullOrEmpty(message);
+                    if (hasError) height += Utils.LineHeight * 2 + Utils.LargeGap;
 
                     height += EditorGUI.GetPropertyHeight(keyProp, true);
                     height += EditorGUI.GetPropertyHeight(valueProp, true);

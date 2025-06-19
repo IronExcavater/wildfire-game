@@ -8,5 +8,10 @@ namespace Generation
     public class GeneratorPools : ScriptableObject
     {
         [SerializedDictionaryField] public SerializedObjectPoolDictionary pools = new();
+
+        private void OnEnable()
+        {
+            pools.Initialize();
+        }
     }
 }

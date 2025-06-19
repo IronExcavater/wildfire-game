@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace Utilities
 {
+    /// <summary>
+    /// Dictionary needs to be initialized at runtime, use SerializeDictionary.Initialize() in OnEnable().
+    /// </summary>
     [Serializable]
     public abstract class SerializedDictionary<TEntry, TKey, TValue> where TEntry : KeyValuePair<TKey, TValue>
     {
@@ -12,7 +15,7 @@ namespace Utilities
 
         public IReadOnlyDictionary<TKey, TValue> Dictionary => _dictionary;
 
-        protected virtual void OnEnable()
+        public void Initialize()
         {
             _dictionary = new Dictionary<TKey, TValue>();
             foreach (var entry in entries) _dictionary.TryAdd(entry.Key, entry.Value);

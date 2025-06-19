@@ -29,7 +29,7 @@ namespace Editor.CssRect
         public readonly Property<BoxInsets> Margin = new();
         public readonly Property<BoxInsets> Padding = new();
         public readonly Property<BoxAlign> Align = new();
-        public readonly Property<BoxGap> Gap = new();
+        public readonly Property<BoxGap> Gap = new(new BoxGap(Utils.LargeGap, Utils.LargeGap));
         public readonly Property<BoxDisplay> Display = new();
 
         public BoxRect(Vector2 position, Vector2 minSize, SerializedProperty property = null)

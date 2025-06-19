@@ -15,6 +15,5 @@ MonoBehaviour:
   pools:
     entries:
     - Key: Generation.Objects.TerrainObject
-      Value: []
-    - Key: Generation.Objects.TerrainObject
-      Value: []
+      Value:
+      - {fileID: 1802042699889495583, guid: 023580a9016a3904684e322572fef404, type: 3}

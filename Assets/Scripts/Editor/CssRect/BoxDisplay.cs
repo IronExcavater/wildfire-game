@@ -122,8 +122,7 @@ namespace Editor.CssRect
                             lineWidth = 0f;
                             lineHeight = 0f;
                         }
-
-                        if (lineWidth > 0f)
+                        else
                             lineWidth += gap.x;
 
                         lineWidth += siblingSize.x;

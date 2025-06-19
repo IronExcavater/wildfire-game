@@ -13,13 +13,12 @@ MonoBehaviour:
   m_Name: GeneratorPasses
   m_EditorClassIdentifier: 
   passes:
-  - rid: 9081719070237393063
-  - rid: -2
+  - rid: 9081719091332120642
   references:
     version: 2
     RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
-    - rid: 9081719070237393063
-      type: {class: FoliagePass, ns: Generation.Passes, asm: Assembly-CSharp}
-      data: 
+    - rid: 9081719091332120642
+      type: {class: TerrainPass, ns: Generation.Passes, asm: Assembly-CSharp}
+      data:
+        amplitude: 5
+        frequency: 0.05

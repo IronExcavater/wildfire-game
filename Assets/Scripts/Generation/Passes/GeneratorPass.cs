@@ -6,6 +6,6 @@ namespace Generation.Passes
     [Serializable]
     public abstract class GeneratorPass
     {
-        public abstract void Apply(World world);
+        public abstract void Apply(World world, Chunk chunk);
     }
 }

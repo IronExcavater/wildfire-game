@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Generation.Data;
 using Generation.Objects;
 using UnityEngine;
@@ -15,8 +17,8 @@ namespace Generation
         private float _checkInterval = 0.5f;
         public static float CheckInterval => Instance._checkInterval;
 
-        private Dictionary<System.Type, IObjectPool> _pools = new();
-        public IReadOnlyDictionary<System.Type, IObjectPool> Pools => _pools;
+        private Dictionary<Type, IObjectPool> _pools = new();
+        public IReadOnlyDictionary<Type, IObjectPool> Pools => _pools;
 
         [SerializeField] private GeneratorPools _generatorPools;
 
@@ -30,24 +32,38 @@ namespace Generation
             _pools.Add(typeof(T), pool);
         }
 
-        public ObjectPool<DataObject<Entity>> GetPool(System.Type type)
+        public ObjectPool<T> GetPool<T>() where T : MonoBehaviour
         {
-            if (_pools.TryGetValue(type, out var pool))
-                return pool as ObjectPool<DataObject<Entity>>;
+            var type = typeof(T);
+            if (GetPool(type) is ObjectPool<T> pool)
+                return pool;
 
-            throw new System.InvalidOperationException($"No ObjectPool found for type {type.Name} in Generator.");
+            throw new InvalidOperationException(
+                $"Malformed ObjectPool: Key `{type.FullName}` exists but value is not ObjectPool<{type.Name}>. " +
+                $"The registered pool type does not match the expected generic argument."
+            );
         }
 
-        private void LoadChunk(Chunk chunk)
+        public IObjectPool GetPool(Type type)
         {
-            if (_instances.ContainsKey(chunk.Position)) return;
+            if (_pools.TryGetValue(type, out var pool))
+                return pool;
 
+            throw new InvalidOperationException($"ObjectPool<{type.Name}> not found");
+        }
+
+        private void LoadChunk(Vector2Int position)
+        {
+            if (_instances.ContainsKey(position)) return;
+
+            var chunk = WorldGenerator.World.GetChunk(position);
             var instances = new List<DataObject<Entity>>();
 
             foreach (var entity in chunk.Entities)
             {
                 var type = entity.Value.Type.Value;
-                var instance = GetPool(type).Get();
+                var pool = GetPool(type);
+                var instance = (DataObject<Entity>)pool.Get();
 
                 instance.Data.Bind(entity);
                 instances.Add(instance);
@@ -76,15 +92,14 @@ namespace Generation
             if (camera == null) return;
 
             var cameraPosition = camera.transform.position;
-            var worldSize = WorldGenerator.WorldSize;
             var chunks = WorldGenerator.World.Chunks;
             var sqrRadius = LoadRadius * LoadRadius;
 
             if (chunks == null) return;
 
             var cameraChunkPosition = new Vector2Int(
-                Mathf.FloorToInt(cameraPosition.x / worldSize.x),
-                Mathf.FloorToInt(cameraPosition.z / worldSize.y)
+                Mathf.FloorToInt(cameraPosition.x / WorldGenerator.ChunkSize),
+                Mathf.FloorToInt(cameraPosition.z / WorldGenerator.ChunkSize)
             );
 
             foreach (var kvp in _instances)
@@ -97,10 +112,41 @@ namespace Generation
             for (var y = -Mathf.FloorToInt(LoadRadius); y <= Mathf.CeilToInt(LoadRadius); y++)
             for (var x = -Mathf.FloorToInt(LoadRadius); x <= Mathf.CeilToInt(LoadRadius); x++)
             {
-                if (chunks.TryGetValue(new Vector2Int(x, y), out var chunk) &&
-                    (chunk.Position - cameraChunkPosition).sqrMagnitude <= sqrRadius)
-                    LoadChunk(chunk);
+                var pos = cameraChunkPosition + new Vector2Int(x, y);
+                if ((pos - cameraChunkPosition).sqrMagnitude <= sqrRadius)
+                    LoadChunk(pos);
             }
+        }
+
+        private (Type, IObjectPool) TransformEntry(string key, List<GameObject> value)
+        {
+            var type = Type.GetType(key);
+            if (type == null || !typeof(MonoBehaviour).IsAssignableFrom(type))
+                throw new Exception($"{key} is not a valid MonoBehaviour type");
+
+            var poolType = typeof(ObjectPool<>).MakeGenericType(type);
+            var prefabArrayType = type.MakeArrayType();
+            var paramTypes = new[] { typeof(int), typeof(Transform), prefabArrayType };
+
+            var constructor = poolType.GetConstructor(paramTypes);
+            if (constructor == null)
+            {
+                var paramNames = string.Join(", ", paramTypes.Select(t => t.FullName));
+                throw new Exception($"No constructor found for type {type.Name} with parameters of ({paramNames})");
+            }
+
+            var convertedPrefabs = Array.CreateInstance(type, value.Count);
+            for (var i = 0; i < value.Count; i++)
+            {
+                var component = value[i].GetComponent(type);
+                if (component == null)
+                    throw new Exception($"GameObject `{value[i].name}` is missing component `{type.Name}`");
+                convertedPrefabs.SetValue(component, i);
+            }
+
+            var poolInstance = constructor.Invoke(new object[] { 10, transform, convertedPrefabs });
+            Debug.Log($"Created pool instance: {poolInstance}");
+            return (type, (IObjectPool)poolInstance);
         }
 
         protected override void Awake()
@@ -114,18 +160,6 @@ namespace Generation
                     _pools[type] = objectPool;
                 }
             }
-        }
-
-        private (Type, IObjectPool) TransformEntry(string key, List<GameObject> value)
-        {
-            var type = Type.GetType(key);
-
-            var poolType = typeof(ObjectPool<>).MakeGenericType(type);
-            var constructor = poolType.GetConstructor(new[] { typeof(int), typeof(Transform), typeof(GameObject[]) });
-
-            var poolInstance = constructor?.Invoke(new object[] { 10, null, value.ToArray() });
-
-            return (type, (IObjectPool)poolInstance);
         }
 
         private void Update()

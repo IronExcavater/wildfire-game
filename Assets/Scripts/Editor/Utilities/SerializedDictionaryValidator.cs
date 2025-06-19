@@ -21,10 +21,9 @@ namespace Editor.Utilities
             {
                 case nameof(SerializedObjectPoolDictionary):
                     var keyType = ResolveType(key.stringValue);
-                    Debug.Log($"String: {key.stringValue}, Expected: {typeof(TerrainObject)}");
                     if (keyType == null || !typeof(MonoBehaviour).IsAssignableFrom(keyType))
                     {
-                        message = $"{key.stringValue} is not a valid MonoBehaviour type [{keyType}]";
+                        message = $"{key.stringValue} is not a valid MonoBehaviour type";
                         return;
                     }
 
@@ -32,9 +31,15 @@ namespace Editor.Utilities
                     {
                         var obj = value.GetArrayElementAtIndex(i).objectReferenceValue as GameObject;
 
-                        if (obj == null || obj.GetComponent(keyType) == null)
+                        if (obj == null)
                         {
-                            message = $"{obj} is missing component {keyType}";
+                            message = $"Index {i} cannot be null, missing GameObject with component {keyType}";
+                            return;
+                        }
+
+                        if (obj.GetComponent(keyType) == null)
+                        {
+                            message = $"GameObject {obj.name} at index {i} is missing component {keyType}";
                             return;
                         }
                     }
