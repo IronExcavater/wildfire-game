@@ -13,12 +13,15 @@ MonoBehaviour:
   m_Name: GeneratorPasses
   m_EditorClassIdentifier: 
   passes:
-  - rid: 9081719091332120642
+  - rid: 9081719093430321260
   references:
     version: 2
     RefIds:
-    - rid: 9081719091332120642
+    - rid: 9081719093430321260
       type: {class: TerrainPass, ns: Generation.Passes, asm: Assembly-CSharp}
       data:
-        amplitude: 5
-        frequency: 0.05
+        amplitude: 10
+        frequency: 0.01
+        octaves: 4
+        lacunarity: 2
+        persistence: 0.5

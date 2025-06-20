@@ -9,14 +9,16 @@ namespace Generation.Passes
     [Serializable]
     public class TerrainPass : GeneratorPass
     {
-        [Range(1, 100)]
-        public float amplitude = 5f;
-        [Range(0.01f, 100)]
-        public float frequency = 0.05f;
+        [Range(1, 100)] public float amplitude = 10f;
+        [Range(0.001f, 0.5f)] public float frequency = 0.01f;
+        [Range(1, 10)] public int octaves = 4;
+        [Range(0.01f, 10)] public float lacunarity = 2f;
+        [Range(0.01f, 1)] public float persistence = 0.5f;
 
         public override void Apply(World world, Chunk chunk)
         {
             var chunkSize = WorldGenerator.ChunkSize;
+            var size = chunkSize * WorldGenerator.Resolution;
 
             if (!chunk.TryGetEntityOfType(typeof(TerrainObject), out var terrain))
             {
@@ -28,19 +30,31 @@ namespace Generation.Passes
             terrain.Value.Position.Value = worldPos;
 
             if (!terrain.Value.TryGetProperty("Heightmap", out Property<float[,]> heightmap) ||
-                heightmap.Value.Length != (int)Math.Pow(chunkSize + 1, 2) || heightmap.Value.Rank != 2)
+                heightmap.Value.Length != (int)Math.Pow(size + 1, 2) || heightmap.Value.Rank != 2)
             {
-                heightmap = new Property<float[,]>(new float[chunkSize + 1, chunkSize + 1]);
+                heightmap = new Property<float[,]>(new float[size + 1, size + 1]);
                 terrain.Value.AddProperty("Heightmap", heightmap);
             }
 
-            for (var y = 0; y < chunkSize + 1; y++)
-            for (var x = 0; x < chunkSize + 1; x++)
+            var arbitraryOffset = 100000; // Temporary solution to resolve noise seams with negative numbers
+
+            for (var y = 0; y <= size; y++)
+            for (var x = 0; x <= size; x++)
             {
-                var nx = chunk.Position.x * chunkSize + x;
-                var ny = chunk.Position.y * chunkSize + y;
-                var height = Mathf.PerlinNoise(nx * frequency, ny * frequency) * amplitude;
-                heightmap.Value[x, y] += height;
+                var amp = amplitude;
+                var freq = frequency;
+
+                for (var i = 0; i < octaves; i++)
+                {
+                    var nx = chunk.Position.x * size + x + arbitraryOffset;
+                    var ny = chunk.Position.y * size + y + arbitraryOffset;
+
+                    var height = Mathf.PerlinNoise(nx * freq, ny * freq) * amp;
+                    heightmap.Value[x, y] += height;
+
+                    amp *= persistence;
+                    freq *= lacunarity;
+                }
             }
         }
     }

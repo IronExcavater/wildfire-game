@@ -8,8 +8,14 @@ namespace Generation
 {
     public class WorldGenerator : Singleton<WorldGenerator>
     {
-        [SerializeField] private int _chunkSize = 32;
+        [SerializeField, Range(1, 128)] private int _chunkSize = 32;
         public static int ChunkSize => Instance._chunkSize;
+
+        [SerializeField, Range(1, 10)] private int _resolution = 2;
+        public static int Resolution => Instance._resolution;
+
+        [SerializeField, Range(1, 8)] private int _maxLodLevel = 4;
+        public static int MaxLodLevel => Instance._maxLodLevel;
 
         private World _world = new();
         public static World World => Instance._world;

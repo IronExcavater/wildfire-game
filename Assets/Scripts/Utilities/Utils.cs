@@ -31,6 +31,21 @@ namespace Utilities
             return Mathf.Clamp(Vector3.Dot(point - linePoint, lineDirection), 0, length);
         }
 
+        public static void AddValueToAverage(ref double average, ref int count, double value)
+        {
+            average += (value - average) / ++count;
+        }
+
+        public static void RemoveValueFromAverage(ref double average, ref int count, double value)
+        {
+            if (count <= 1)
+            {
+                average = count = 0;
+                return;
+            }
+            average += (average - value) / --count;
+        }
+
         public static Type GetBaseType(this Type type)
         {
             if (type.IsArray) return type.GetElementType();
