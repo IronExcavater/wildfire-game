@@ -26,11 +26,13 @@ namespace Editor.CssRect
         public readonly Property<Vector2> RectSize = new();
         public readonly Property<Rect> Rect = new();
 
-        public readonly Property<BoxInsets> Margin = new();
         public readonly Property<BoxInsets> Padding = new();
         public readonly Property<BoxAlign> Align = new();
-        public readonly Property<BoxGap> Gap = new(new BoxGap(Utils.LargeGap, Utils.LargeGap));
+        public readonly Property<BoxVec2> Gap = new(new BoxVec2(EditorUtils.SmallGap));
+
         public readonly Property<BoxDisplay> Display = new();
+        public readonly Property<BoxPosition> Position = new();
+        public readonly Property<BoxVec2> Offset = new();
 
         public BoxRect(Vector2 position, Vector2 minSize, SerializedProperty property = null)
         {
@@ -46,7 +48,7 @@ namespace Editor.CssRect
             InitalizeListeners();
             BoundsSize.Value = new Vector2(
                 width ?? parent.RectSize.Value.x,
-                height ?? Utils.LineHeight
+                height ?? EditorUtils.LineHeight
             );
             Parent.Value = parent;
             MinSize.Value = minSize ?? BoundsSize.Value;
@@ -57,7 +59,7 @@ namespace Editor.CssRect
             InitalizeListeners();
             BoundsSize.Value = new Vector2(
                 width ?? parent.RectSize.Value.x,
-                Utils.LineHeight
+                EditorUtils.LineHeight
             );
             Parent.Value = parent;
             Property.Value = property;
@@ -125,12 +127,6 @@ namespace Editor.CssRect
             Bounds.AddListener((_, _) =>
             {
                 UpdateRect();
-                InvokeOnChanged();
-            });
-
-            Margin.AddListener((_, _) =>
-            {
-                UpdateBoundsSize();
                 InvokeOnChanged();
             });
             Padding.AddListener((_, _) =>

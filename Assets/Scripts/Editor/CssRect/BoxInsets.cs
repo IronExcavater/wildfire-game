@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Editor.CssRect
 {
@@ -34,9 +35,9 @@ namespace Editor.CssRect
             Left = left;
         }
 
-        public Vector4 Resolve(Vector2 size, ResolveMode mode = ResolveMode.Inner)
+        public (float top, float right, float bottom, float left) Resolve(Vector2 size, ResolveMode mode = ResolveMode.Inner)
         {
-            return new Vector4(
+            return (
                 Top.Resolve(size.y, mode),
                 Right.Resolve(size.x, mode),
                 Bottom.Resolve(size.y, mode),
@@ -48,10 +49,10 @@ namespace Editor.CssRect
         {
             var insets = Resolve(rect.size, mode);
             return new Rect(
-                rect.position.x + insets.w,
-                rect.position.y + insets.x,
-                rect.size.x - insets.w - insets.y,
-                rect.size.y - insets.x - insets.z
+                Math.Max(0, rect.position.x + insets.left),
+                Math.Max(0, rect.position.y + insets.top),
+                Math.Max(0, rect.size.x - insets.left - insets.right),
+                Math.Max(0, rect.size.y - insets.top - insets.bottom)
             );
         }
     }

@@ -139,9 +139,9 @@ namespace Generation.Objects
                 v++;
 
                 vertices[v] = new Vector3(
-                    v2.x + d2.x * SkirtOffset,
+                    v2.x + d2.x * SkirtDepth * SkirtOffset,
                     v2.y - SkirtDepth,
-                    v2.z + d2.y * SkirtOffset
+                    v2.z + d2.y * SkirtDepth * SkirtOffset
                 );
                 normals[v] = normals[i2];
                 uvs[v] = uvs[i2];

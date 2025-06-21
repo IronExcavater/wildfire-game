@@ -10,8 +10,13 @@ namespace Editor.CssRect
         Inline,
         // Flex,
         // Grid,
-        // Absolute,
-        // Relative,
+    }
+
+    public enum BoxPosition
+    {
+        Static,
+        Relative,
+        Absolute
     }
 
     public static class BoxDisplayExtensions
@@ -30,6 +35,7 @@ namespace Editor.CssRect
                     for (var i = 0; i < children.Count; i++)
                     {
                         var child = children[i];
+                        if (child.Position.Value == BoxPosition.Absolute) continue;
 
                         width = Math.Max(width, child.BoundsSize.Value.x);
                         height += child.BoundsSize.Value.y;
@@ -45,6 +51,7 @@ namespace Editor.CssRect
                     for (var i = 0; i < children.Count; i++)
                     {
                         var child = children[i];
+                        if (child.Position.Value == BoxPosition.Absolute) continue;
 
                         var childSize = child.BoundsSize.Value;
                         if (lineWidth + childSize.x > target.ContainerSize.Value.x && lineWidth > 0f)
@@ -87,10 +94,13 @@ namespace Editor.CssRect
             var parent = target.Parent.Value;
             var siblings = parent.Children.Value;
 
-            var x = parent.RectPosition.Value.x;
-            var y = parent.RectPosition.Value.y;
+            var basePos = parent.RectPosition.Value;
+
+            if (target.Position.Value == BoxPosition.Absolute)
+                return basePos + target.Offset.Value.Resolve(parent.RectSize.Value);
 
             var gap = parent.Gap.Value.Resolve(parent.ContainerSize.Value);
+            var offset = Vector2.zero;
 
             switch (parent.Display.Value)
             {
@@ -98,10 +108,12 @@ namespace Editor.CssRect
                     for (var i = 0; i < siblings.Count; i++)
                     {
                         var sibling = siblings[i];
+                        var siblingSize = sibling.ContainerSize.Value;
+
                         if (sibling == target) break;
 
-                        y += sibling.ContainerSize.Value.y;
-                        if (i < siblings.Count - 1) y += gap.y;
+                        offset.y += siblingSize.y;
+                        if (i < siblings.Count - 1) offset.y += gap.y;
                     }
                     break;
                 case BoxDisplay.Inline:
@@ -111,13 +123,13 @@ namespace Editor.CssRect
                     for (var i = 0; i < siblings.Count; i++)
                     {
                         var sibling = siblings[i];
-                        if (sibling == target) break;
-
                         var siblingSize = sibling.ContainerSize.Value;
+
+                        if (sibling == target) break;
 
                         if (lineWidth + siblingSize.x > parent.RectSize.Value.x && lineWidth > 0f)
                         {
-                            y += lineHeight + gap.y;
+                            offset.y += lineHeight + gap.y;
 
                             lineWidth = 0f;
                             lineHeight = 0f;
@@ -129,11 +141,14 @@ namespace Editor.CssRect
                         lineHeight = Math.Max(lineHeight, siblingSize.y);
                     }
 
-                    x += lineWidth;
+                    offset.x += lineWidth;
                     break;
             }
 
-            return new Vector2(x, y);
+            if (target.Position.Value == BoxPosition.Relative)
+                offset += target.Offset.Value.Resolve(parent.RectSize.Value);
+
+            return basePos + offset;
         }
 
         public static Vector2 ContainerSizeFromParent(this BoxDisplay boxDisplay, BoxRect target)
@@ -155,10 +170,7 @@ namespace Editor.CssRect
                     break;
             }
 
-            var rect = new Rect(new(), new Vector2(width, height));
-            var margin = target.Margin.Value.ApplyTo(rect);
-
-            return margin.size;
+            return new Vector2(width, height);
         }
     }
 }

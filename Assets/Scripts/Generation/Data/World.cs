@@ -24,6 +24,7 @@ namespace Generation.Data
             return chunk;
         }
 
+        // Not performant
         public float GetAverageHeight(Vector2 worldPosition, int radius)
         {
             var resolution = WorldGenerator.Resolution;

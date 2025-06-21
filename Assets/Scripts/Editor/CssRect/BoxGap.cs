@@ -3,22 +3,28 @@ using UnityEngine;
 
 namespace Editor.CssRect
 {
-    public readonly struct BoxGap
+    public readonly struct BoxVec2
     {
-        public readonly BoxValue Horizontal;
-        public readonly BoxValue Vertical;
+        public readonly BoxValue X;
+        public readonly BoxValue Y;
 
-        public BoxGap(float horizontal = Utils.SmallGap, float vertical = Utils.SmallGap)
+        public BoxVec2(float gap = 0)
         {
-            Horizontal = new BoxValue(horizontal);
-            Vertical = new BoxValue(vertical);
+            X = new BoxValue(gap);
+            Y = new BoxValue(gap);
+        }
+
+        public BoxVec2(float horizontal = 0, float vertical = 0)
+        {
+            X = new BoxValue(horizontal);
+            Y = new BoxValue(vertical);
         }
 
         public Vector2 Resolve(Vector2 size)
         {
             return new Vector2(
-                Horizontal.Resolve(size.x),
-                Vertical.Resolve(size.y)
+                X.Resolve(size.x),
+                Y.Resolve(size.y)
             );
         }
     }

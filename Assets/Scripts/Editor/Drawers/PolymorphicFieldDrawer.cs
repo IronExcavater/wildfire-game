@@ -18,7 +18,7 @@ namespace Editor.Drawers
         {
             if (!PropertyValidation(property))
             {
-                EditorGUI.LabelField(position, "⚠ [PolymorphicField] requires [SerializeReference] attribute to work!");
+                EditorGUI.HelpBox(position, "[PolymorphicField] requires [SerializeReference] attribute to work!", MessageType.Error);
                 return;
             }
 
