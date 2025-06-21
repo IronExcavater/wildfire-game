@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
-using Utilities;
 using Utilities.Observables;
 
 namespace Generation.Data
@@ -8,25 +8,25 @@ namespace Generation.Data
     public class Entity
     {
         public readonly Property<Vector3> Position = new();
-        public readonly Property<System.Type> Type = new();
+        public readonly Property<Type> Type = new();
         public readonly Dictionary<string, IProperty> Properties = new();
 
-        public Entity(System.Type type, Vector3 position = default)
+        public Entity(Type type, Vector3 position = default)
         {
             Type.Value = type;
             Position.Value = position;
         }
 
-        public Entity(System.Type type, Vector3 position = default, params (string key, IProperty value)[] properties)
+        public Entity(Type type, Vector3 position = default, params (string key, IProperty value)[] properties)
             : this(type, position)
         {
             foreach (var (key, value) in properties)
                 Properties[key] = value;
         }
 
-        public void AddProperty<T>(string key, Property<T> property)
+        public void SetProperty<T>(string key, Property<T> property)
         {
-            Properties.Add(key, property);
+            Properties[key] = property;
         }
 
         public bool TryGetProperty<T>(string key, out Property<T> property)

@@ -33,7 +33,7 @@ namespace Generation.Passes
                 heightmap.Value.Length != (int)Math.Pow(size + 1, 2) || heightmap.Value.Rank != 2)
             {
                 heightmap = new Property<float[,]>(new float[size + 1, size + 1]);
-                terrain.Value.AddProperty("Heightmap", heightmap);
+                terrain.Value.SetProperty("Heightmap", heightmap);
             }
 
             var arbitraryOffset = 100000; // Temporary solution to resolve noise seams with negative numbers

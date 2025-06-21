@@ -46,6 +46,8 @@ namespace Utilities
             average += (average - value) / --count;
         }
 
+        public static int EuclideanMod(int a, int b) => (a % b + b) % b;
+
         public static Type GetBaseType(this Type type)
         {
             if (type.IsArray) return type.GetElementType();
