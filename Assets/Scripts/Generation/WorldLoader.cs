@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using System.Threading.Tasks;
 using Generation.Data;
 using Generation.Objects;
 using UnityEngine;
@@ -11,7 +11,7 @@ namespace Generation
 {
     public class WorldLoader : Singleton<WorldLoader>
     {
-        private float _loadRadius = 10;
+        [SerializeField, Range(1, 1000)] private float _loadRadius = 10;
         public static float LoadRadius => Instance._loadRadius;
 
         private float _checkInterval = 0.5f;
@@ -21,6 +21,12 @@ namespace Generation
         public IReadOnlyDictionary<Type, IObjectPool> Pools => _pools;
 
         [SerializeField] private GeneratorPools _generatorPools;
+
+        private readonly Dictionary<Vector2Int, TaskCompletionSource<List<DataObject<Entity>>>> _loadTasks = new();
+        private readonly Queue<Vector2Int> _loadQueue = new();
+
+        private readonly Dictionary<Vector2Int, TaskCompletionSource<bool>> _unloadTasks = new();
+        private readonly Queue<Vector2Int> _unloadQueue = new();
 
         private readonly Dictionary<Vector2Int, List<DataObject<Entity>>> _instances = new();
 
@@ -52,12 +58,46 @@ namespace Generation
             throw new InvalidOperationException($"ObjectPool<{type.Name}> not found");
         }
 
-        private void LoadChunk(Vector2Int position)
+        public static Task<List<DataObject<Entity>>> GetChunk(Vector2Int position)
         {
-            if (_instances.ContainsKey(position)) return;
+            lock (Instance._instances) if (Instance._instances.TryGetValue(position, out var data)) return Task.FromResult(data);
 
-            var chunk = WorldGenerator.World.GetChunk(position);
+            lock (Instance._loadTasks)
+            lock (Instance._loadQueue)
+            {
+                if (Instance._loadTasks.TryGetValue(position, out var tcs)) return tcs.Task;
+
+                tcs = new TaskCompletionSource<List<DataObject<Entity>>>();
+                Instance._loadQueue.Enqueue(position);
+                Instance._loadTasks.Add(position, tcs);
+                return tcs.Task;
+            }
+        }
+
+        public static Task<bool> RemoveChunk(Vector2Int position)
+        {
+            lock (Instance._instances) if (!Instance._instances.ContainsKey(position)) return Task.FromResult(true);
+
+            lock (Instance._unloadTasks)
+            lock (Instance._unloadQueue)
+            {
+                if (Instance._unloadTasks.TryGetValue(position, out var tcs)) return tcs.Task;
+
+                tcs = new TaskCompletionSource<bool>();
+                Instance._unloadQueue.Enqueue(position);
+                Instance._unloadTasks.Add(position, tcs);
+                return tcs.Task;
+            }
+        }
+
+        private async void LoadChunkAsync(Vector2Int position)
+        {
+            //if (_instances.ContainsKey(position)) return;
+
             var instances = new List<DataObject<Entity>>();
+            _instances[position] = instances;
+
+            var chunk = await WorldGenerator.GetChunk(position);
 
             foreach (var entity in chunk.Entities)
             {
@@ -65,16 +105,17 @@ namespace Generation
                 var pool = GetPool(type);
                 var instance = (DataObject<Entity>)pool.Get();
 
-                instance.Data.Bind(entity);
                 instances.Add(instance);
+                instance.Data.Bind(entity);
             }
 
-            _instances.Add(chunk.Position, instances);
+            if (_loadTasks.Remove(position, out var tcs)) tcs.SetResult(instances);
+            Debug.Log($"Loaded chunk at {position}");
         }
 
-        private void UnloadChunk(Chunk chunk)
+        private void UnloadChunk(Vector2Int position)
         {
-            if (!_instances.TryGetValue(chunk.Position, out var instances)) return;
+            if (!_instances.TryGetValue(position, out var instances)) return;
 
             foreach (var instance in instances)
             {
@@ -84,10 +125,12 @@ namespace Generation
                 GetPool(type).Release(instance);
             }
 
-            _instances.Remove(chunk.Position);
+            _instances.Remove(position);
+            if (_unloadTasks.Remove(position, out var tcs)) tcs.SetResult(true);
+            Debug.Log($"Unloaded chunk at {position}");
         }
 
-        public void UpdateVisibleChunks(Camera camera)
+        private void UpdateVisibleChunks(Camera camera)
         {
             if (camera == null) return;
 
@@ -102,19 +145,18 @@ namespace Generation
                 Mathf.FloorToInt(cameraPosition.z / WorldGenerator.ChunkSize)
             );
 
-            foreach (var kvp in _instances)
+            foreach (var position in _instances.Keys)
             {
-                if ((kvp.Key - cameraChunkPosition).sqrMagnitude > sqrRadius &&
-                    chunks.TryGetValue(kvp.Key, out var chunk))
-                    UnloadChunk(chunk);
+                if ((position - cameraChunkPosition).sqrMagnitude > sqrRadius)
+                    RemoveChunk(position);
             }
 
             for (var y = -Mathf.FloorToInt(LoadRadius); y <= Mathf.CeilToInt(LoadRadius); y++)
             for (var x = -Mathf.FloorToInt(LoadRadius); x <= Mathf.CeilToInt(LoadRadius); x++)
             {
-                var pos = cameraChunkPosition + new Vector2Int(x, y);
-                if ((pos - cameraChunkPosition).sqrMagnitude <= sqrRadius)
-                    LoadChunk(pos);
+                var position = cameraChunkPosition + new Vector2Int(x, y);
+                if ((position - cameraChunkPosition).sqrMagnitude <= sqrRadius)
+                    GetChunk(position);
             }
         }
 
@@ -166,6 +208,12 @@ namespace Generation
         {
             if (_camera == null) _camera = Camera.main;
             UpdateVisibleChunks(_camera);
+
+            while (_loadQueue.Count > 0)
+                LoadChunkAsync(_loadQueue.Dequeue());
+
+            while (_unloadQueue.Count > 0)
+                UnloadChunk(_unloadQueue.Dequeue());
         }
     }
 }

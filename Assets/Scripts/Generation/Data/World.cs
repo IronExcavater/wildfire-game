@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Generation.Objects;
 using UnityEngine;
 using Utilities;
@@ -10,22 +11,8 @@ namespace Generation.Data
     {
         public Dictionary<Vector2Int, Chunk> Chunks = new();
 
-        public Chunk GetChunk(Vector2Int position)
-        {
-            if (!Chunks.TryGetValue(position, out var chunk))
-            {
-                chunk = new Chunk(position);
-                Chunks[position] = chunk;
-
-                foreach (var pass in WorldGenerator.Passes)
-                    pass.Apply(this, chunk);
-            }
-
-            return chunk;
-        }
-
         // Not performant
-        public float GetAverageHeight(Vector2 worldPosition, int radius)
+        public async Task<float> GetAverageHeight(Vector2 worldPosition, int radius)
         {
             var resolution = WorldGenerator.Resolution;
             var average = 0d;
@@ -36,20 +23,20 @@ namespace Generation.Data
             {
                 var worldX = worldPosition.x + dx / (float)resolution;
                 var worldY = worldPosition.y + dy / (float)resolution;
-                Utils.AddValueToAverage(ref average, ref count, GetHeight(new Vector2(worldX, worldY)));
+                Utils.AddValueToAverage(ref average, ref count, await GetHeight(new Vector2(worldX, worldY)));
             }
 
             return (float)average;
         }
 
-        public Vector3 GetNormal(Vector2 worldPosition)
+        public async Task<Vector3> GetNormal(Vector2 worldPosition)
         {
             var offset = 1f / WorldGenerator.Resolution;
 
-            var left = GetHeight(worldPosition + new Vector2(-offset, 0));
-            var right = GetHeight(worldPosition + new Vector2(+offset, 0));
-            var down = GetHeight(worldPosition + new Vector2(0, -offset));
-            var up = GetHeight(worldPosition + new Vector2(0, +offset));
+            var left = await GetHeight(worldPosition + new Vector2(-offset, 0));
+            var right = await GetHeight(worldPosition + new Vector2(+offset, 0));
+            var down = await GetHeight(worldPosition + new Vector2(0, -offset));
+            var up = await GetHeight(worldPosition + new Vector2(0, +offset));
 
             var dx = new Vector3(2f * offset, right - left, 0);
             var dz = new Vector3(0, up - down, 2f * offset);
@@ -57,7 +44,7 @@ namespace Generation.Data
             return Vector3.Normalize(Vector3.Cross(dz, dx));
         }
 
-        public float GetHeight(Vector2 worldPosition)
+        public async Task<float> GetHeight(Vector2 worldPosition)
         {
             var resolution = WorldGenerator.Resolution;
 
@@ -69,17 +56,17 @@ namespace Generation.Data
             var fracX = sampleX - baseX;
             var fracY = sampleY - baseY;
 
-            var bottomLeft = GetHeight(new Vector2Int(baseX, baseY));
-            var bottomRight = GetHeight(new Vector2Int(baseX + 1, baseY));
-            var topLeft = GetHeight(new Vector2Int(baseX, baseY + 1));
-            var topRight = GetHeight(new Vector2Int(baseX + 1, baseY + 1));
+            var bottomLeft = await GetHeight(new Vector2Int(baseX, baseY));
+            var bottomRight = await GetHeight(new Vector2Int(baseX + 1, baseY));
+            var topLeft = await GetHeight(new Vector2Int(baseX, baseY + 1));
+            var topRight = await GetHeight(new Vector2Int(baseX + 1, baseY + 1));
 
             var bottomInterp = Mathf.Lerp(bottomLeft, bottomRight, fracX);
             var topInterp = Mathf.Lerp(topLeft, topRight, fracX);
             return Mathf.Lerp(bottomInterp, topInterp, fracY);
         }
 
-        public float GetHeight(Vector2Int worldPosition)
+        public async Task<float> GetHeight(Vector2Int worldPosition)
         {
             var mapSize = WorldGenerator.ChunkSize * WorldGenerator.Resolution;
             var chunkX = Mathf.FloorToInt(worldPosition.x / (float)mapSize);
@@ -99,7 +86,7 @@ namespace Generation.Data
                 localY += mapSize;
             }
 
-            var chunk = GetChunk(new Vector2Int(chunkX, chunkY));
+            var chunk = await WorldGenerator.GetChunk(new Vector2Int(chunkX, chunkY));
             if (!chunk.TryGetEntityOfType(typeof(TerrainObject), out var terrain)) return 0;
             if (!terrain.Value.TryGetProperty("Heightmap", out Property<float[,]> heightmap)) return 0;
             return heightmap.Value[localX, localY];

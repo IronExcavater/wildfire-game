@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Generation.Data;
 using UnityEngine;
 using Utilities.Observables;
@@ -20,7 +21,7 @@ namespace Generation.Objects
                 if (value == _lod) return;
                 _lod = value;
 
-                _meshFilter.sharedMesh = GenerateMesh(_lod);
+                LoadMeshAsync(_lod);
             }
         }
 
@@ -28,6 +29,7 @@ namespace Generation.Objects
 
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
+        private MeshCollider _meshCollider;
 
         private readonly Property<Vector3> _position = new();
         private readonly Property<float[,]> _heightmap = new();
@@ -40,12 +42,13 @@ namespace Generation.Objects
             base.Awake();
             _meshFilter = GetComponent<MeshFilter>();
             _meshRenderer = GetComponent<MeshRenderer>();
+            _meshCollider = GetComponent<MeshCollider>();
 
             _position.AddListener((_, change) => transform.position = change.NewValue);
             _heightmap.AddListener((_, _) =>
             {
                 _meshes.Clear();
-                _meshFilter.sharedMesh = GenerateMesh(Lod);
+                LoadMeshAsync(Lod);
             });
         }
 
@@ -57,120 +60,132 @@ namespace Generation.Objects
                 _heightmap.BindBidirectional(heightmap);
         }
 
-        private Mesh GenerateMesh(int lod)
+        private async void LoadMeshAsync(int lod)
         {
-            if (_meshes.TryGetValue(lod, out var mesh)) return mesh;
+            if (!_heightmap.IsBound && _meshFilter == null) return;
 
-            var chunkSize = WorldGenerator.ChunkSize;
-            var resolution = WorldGenerator.Resolution;
-            var step = 1 << lod;
-
-            var countX = (_heightmap.Value.GetLength(0) - 1) / step;
-            var countY = (_heightmap.Value.GetLength(1) - 1) / step;
-
-            var width = countX + 1;
-            var height = countY + 1;
-
-            var vertexCount = width * height;
-            var skirtVertexCount = 4 * (width + height - 2);
-
-            var vertices = new Vector3[vertexCount + skirtVertexCount];
-            var uvs = new Vector2[vertices.Length];
-            var normals = new Vector3[vertices.Length];
-            var triangles = new int[countX * countY * 6 + skirtVertexCount * 3];
-
-            for (var y = 0; y < height; y++)
-            for (var x = 0; x < width; x++)
+            if (!_meshes.TryGetValue(lod, out var mesh))
             {
-                var stepX = x * step;
-                var stepY = y * step;
-
-                var localX = stepX / (float)resolution;
-                var localY = stepY / (float)resolution;
-
-                var worldPos = new Vector2(localX + _position.Value.x, localY + _position.Value.z);
-
-                var i = y * width + x;
-                var h = WorldGenerator.World.GetHeight(worldPos);
-                //var h = WorldGenerator.World.GetAverageHeight(new Vector2(localX + _position.Value.x, localY + _position.Value.z), step);
-                vertices[i] = new Vector3(localX, h, localY);
-                uvs[i] = worldPos;
-                normals[i] = WorldGenerator.World.GetNormal(worldPos);
+                var meshData = await GenerateMeshAsync(lod);
+                mesh = new Mesh
+                {
+                    vertices = meshData.vertices,
+                    uv = meshData.uvs,
+                    normals = meshData.normals,
+                    triangles = meshData.triangles
+                };
+                _meshes[lod] = mesh;
             }
 
-            var tri = 0;
+            _meshFilter.sharedMesh = mesh;
+        }
 
-            for (var y = 0; y < countY; y++)
-            for (var x = 0; x < countX; x++)
+        private async Task<(Vector3[] vertices, Vector2[] uvs, Vector3[] normals, int[] triangles)> GenerateMeshAsync(int lod)
+        {
+            return await Task.Run(async () =>
             {
-                var i = y * width + x;
+                var chunkSize = WorldGenerator.ChunkSize;
+                var resolution = WorldGenerator.Resolution;
+                var step = 1 << lod;
 
-                triangles[tri++] = i;
-                triangles[tri++] = i + width;
-                triangles[tri++] = i + width + 1;
+                var countX = (_heightmap.Value.GetLength(0) - 1) / step;
+                var countY = (_heightmap.Value.GetLength(1) - 1) / step;
 
-                triangles[tri++] = i;
-                triangles[tri++] = i + width + 1;
-                triangles[tri++] = i + 1;
-            }
+                var width = countX + 1;
+                var height = countY + 1;
 
-            var v = vertexCount;
+                var vertexCount = width * height;
+                var skirtVertexCount = 4 * (width + height - 2);
 
-            void AddSkirt(int i1, int i2)
-            {
-                var v1 = vertices[i1];
-                var v2 = vertices[i2];
+                var vertices = new Vector3[vertexCount + skirtVertexCount];
+                var uvs = new Vector2[vertices.Length];
+                var normals = new Vector3[vertices.Length];
+                var triangles = new int[countX * countY * 6 + skirtVertexCount * 3];
 
-                var vertexCenter = new Vector2(chunkSize / 2f, chunkSize / 2f);
-                var d1 = (new Vector2(v1.x, v1.z) - vertexCenter).normalized;
-                var d2 = (new Vector2(v2.x, v2.z) - vertexCenter).normalized;
+                for (var y = 0; y < height; y++)
+                for (var x = 0; x < width; x++)
+                {
+                    var stepX = x * step;
+                    var stepY = y * step;
 
-                vertices[v] = new Vector3(
-                    v1.x + d1.x * SkirtOffset,
-                    v1.y - SkirtDepth,
-                    v1.z + d1.y * SkirtOffset
-                );
-                normals[v] = normals[i1];
-                uvs[v] = uvs[i1];
+                    var localX = stepX / (float)resolution;
+                    var localY = stepY / (float)resolution;
 
-                triangles[tri++] = i1;
-                triangles[tri++] = i2;
-                triangles[tri++] = v;
-                v++;
+                    var worldPos = new Vector2(localX + _position.Value.x, localY + _position.Value.z);
 
-                vertices[v] = new Vector3(
-                    v2.x + d2.x * SkirtDepth * SkirtOffset,
-                    v2.y - SkirtDepth,
-                    v2.z + d2.y * SkirtDepth * SkirtOffset
-                );
-                normals[v] = normals[i2];
-                uvs[v] = uvs[i2];
+                    var i = y * width + x;
+                    var h = await WorldGenerator.World.GetHeight(worldPos);
+                    //var h = WorldGenerator.World.GetAverageHeight(new Vector2(localX + _position.Value.x, localY + _position.Value.z), step);
+                    vertices[i] = new Vector3(localX, h, localY);
+                    uvs[i] = worldPos;
+                    normals[i] = await WorldGenerator.World.GetNormal(worldPos);
+                }
 
-                triangles[tri++] = i2;
-                triangles[tri++] = v;
-                triangles[tri++] = v - 1;
-                v++;
-            }
+                var tri = 0;
 
-            for (var x = 0; x < width - 1; x++)
-                AddSkirt(x, x + 1);
-            for (var y = 0; y < height - 1; y++)
-                AddSkirt(y * width + (width - 1), (y + 1) * width + (width - 1));
-            for (var x = width - 1; x > 0; x--)
-                AddSkirt((height - 1) * width + x, (height - 1) * width + x - 1);
-            for (var y = height - 1; y > 0; y--)
-                AddSkirt(y * width, (y - 1) * width);
+                for (var y = 0; y < countY; y++)
+                for (var x = 0; x < countX; x++)
+                {
+                    var i = y * width + x;
 
-            mesh = new Mesh
-            {
-                vertices = vertices,
-                uv = uvs,
-                triangles = triangles,
-                normals = normals
-            };
+                    triangles[tri++] = i;
+                    triangles[tri++] = i + width;
+                    triangles[tri++] = i + width + 1;
 
-            _meshes[lod] = mesh;
-            return mesh;
+                    triangles[tri++] = i;
+                    triangles[tri++] = i + width + 1;
+                    triangles[tri++] = i + 1;
+                }
+
+                var v = vertexCount;
+
+                void AddSkirt(int i1, int i2)
+                {
+                    var v1 = vertices[i1];
+                    var v2 = vertices[i2];
+
+                    var vertexCenter = new Vector2(chunkSize / 2f, chunkSize / 2f);
+                    var d1 = (new Vector2(v1.x, v1.z) - vertexCenter).normalized;
+                    var d2 = (new Vector2(v2.x, v2.z) - vertexCenter).normalized;
+
+                    vertices[v] = new Vector3(
+                        v1.x + d1.x * SkirtOffset,
+                        v1.y - SkirtDepth,
+                        v1.z + d1.y * SkirtOffset
+                    );
+                    normals[v] = normals[i1];
+                    uvs[v] = uvs[i1];
+
+                    triangles[tri++] = i1;
+                    triangles[tri++] = i2;
+                    triangles[tri++] = v;
+                    v++;
+
+                    vertices[v] = new Vector3(
+                        v2.x + d2.x * SkirtDepth * SkirtOffset,
+                        v2.y - SkirtDepth,
+                        v2.z + d2.y * SkirtDepth * SkirtOffset
+                    );
+                    normals[v] = normals[i2];
+                    uvs[v] = uvs[i2];
+
+                    triangles[tri++] = i2;
+                    triangles[tri++] = v;
+                    triangles[tri++] = v - 1;
+                    v++;
+                }
+
+                for (var x = 0; x < width - 1; x++)
+                    AddSkirt(x, x + 1);
+                for (var y = 0; y < height - 1; y++)
+                    AddSkirt(y * width + (width - 1), (y + 1) * width + (width - 1));
+                for (var x = width - 1; x > 0; x--)
+                    AddSkirt((height - 1) * width + x, (height - 1) * width + x - 1);
+                for (var y = height - 1; y > 0; y--)
+                    AddSkirt(y * width, (y - 1) * width);
+
+                return (vertices, uvs, normals, triangles);
+            });
         }
 
         private void Update()

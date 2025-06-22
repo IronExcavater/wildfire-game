@@ -5,7 +5,7 @@ namespace Generation.Objects
 {
     public abstract class DataObject<TData> : MonoBehaviour
     {
-        public Property<TData> Data = new();
+        public readonly Property<TData> Data = new();
 
         protected virtual void Awake()
         {

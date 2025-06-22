@@ -45,8 +45,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 700bed8aae5c46d59f98e07690133b8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _worldSize: {x: 10, y: 10}
   _chunkSize: 32
+  _resolution: 2
+  _maxLodLevel: 8
   _generatorPasses: {fileID: 11400000, guid: bb043983507b32749891b97727c6cccb, type: 2}
 --- !u!114 &7743285725829419803
 MonoBehaviour:
@@ -60,4 +61,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 225014dfe0f04249a1980f4f97c27b6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _loadRadius: 20
   _generatorPools: {fileID: 11400000, guid: 79f1c91b7bf84fe48ad136640d756e7d, type: 2}
