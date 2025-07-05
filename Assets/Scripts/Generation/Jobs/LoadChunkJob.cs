@@ -8,14 +8,8 @@ namespace Generation.Jobs
 {
     public class LoadChunkJob : JobBase<List<DataObject<Entity>>>
     {
-        public ChunkJobType Type => ChunkJobType.Load;
-        public Vector2Int Position { get; }
-        public float Priority { get; set; }
-        public bool IsRunning { get; set; }
-
-        public LoadChunkJob(Vector2Int position)
+        public LoadChunkJob(Vector2Int position) : base(ChunkJobType.LoadChunk, position)
         {
-            Position = position;
         }
 
         public override async Task ExecuteAsync()

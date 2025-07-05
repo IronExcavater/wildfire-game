@@ -5,14 +5,8 @@ namespace Generation.Jobs
 {
     public class UnloadChunkJob : JobBase<bool>
     {
-        public ChunkJobType Type => ChunkJobType.Load;
-        public Vector2Int Position { get; }
-        public float Priority { get; set; }
-        public bool IsRunning { get; set; }
-
-        public UnloadChunkJob(Vector2Int position)
+        public UnloadChunkJob(Vector2Int position) : base(ChunkJobType.UnloadChunk, position)
         {
-            Position = position;
         }
 
         public override async Task ExecuteAsync()

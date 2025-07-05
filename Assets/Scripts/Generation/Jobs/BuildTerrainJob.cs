@@ -6,15 +6,10 @@ namespace Generation.Jobs
 {
     public class BuildTerrainJob : JobBase<Mesh>
     {
-        public ChunkJobType Type => ChunkJobType.Build;
-        public Vector2Int Position { get; }
         public int Lod { get; }
-        public float Priority { get; set; }
-        public bool IsRunning { get; set; }
 
-        public BuildTerrainJob(Vector2Int position, int lod)
+        public BuildTerrainJob(Vector2Int position, int lod) : base(ChunkJobType.BuildTerrain, position)
         {
-            Position = position;
             Lod = lod;
         }
 

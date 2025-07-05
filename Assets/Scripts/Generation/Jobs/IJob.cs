@@ -7,10 +7,10 @@ namespace Generation.Jobs
 {
     public enum ChunkJobType
     {
-        Generate,
-        Load,
-        Build,
-        Unload
+        GenerateChunk,
+        LoadChunk,
+        BuildTerrain,
+        UnloadChunk
     }
 
     public abstract class IJob : IComparable<IJob>
@@ -19,6 +19,12 @@ namespace Generation.Jobs
         public Vector2Int Position { get; }
         public float Priority { get; set; }
         public bool IsRunning { get; set; }
+
+        public IJob(ChunkJobType type, Vector2Int position)
+        {
+            Type = type;
+            Position = position;
+        }
 
         public int CompareTo(IJob other) => Priority.CompareTo(other.Priority);
 
@@ -29,6 +35,10 @@ namespace Generation.Jobs
     {
         public TaskCompletionSource<TComplete> CompleteSource { get; } = new();
         public CancellationTokenSource CancelSource { get; } = new();
+
+        protected JobBase(ChunkJobType type, Vector2Int position) : base(type, position)
+        {
+        }
 
         public bool Equals(JobBase<TComplete> other) => other != null && Position.Equals(other.Position) && Type.Equals(other.Type);
         public override bool Equals(object obj) => obj is JobBase<TComplete> other && Equals(other);
