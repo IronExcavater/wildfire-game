@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Utilities.Observables;
 
@@ -19,23 +20,23 @@ namespace Generation.Data
             Entities.Add(entity);
         }
 
-        public List<Property<Entity>> GetEntitiesOfType(System.Type type)
+        public List<Property<Entity>> GetEntitiesOfType(Type type)
         {
             return Entities.FindAll(entity => entity.Value.Type.Value == type);
         }
 
-        public Property<Entity> GetEntityOfType(System.Type type)
+        public Property<Entity> GetEntityOfType(Type type)
         {
             return Entities.Find(entity => entity.Value.Type.Value == type);
         }
 
-        public bool TryGetEntitiesOfType(System.Type type, out List<Property<Entity>> entities)
+        public bool TryGetEntitiesOfType(Type type, out List<Property<Entity>> entities)
         {
             entities = Entities.FindAll(entity => entity.Value.Type.Value == type);
             return entities.Count > 0;
         }
 
-        public bool TryGetEntityOfType(System.Type type, out Property<Entity> entity)
+        public bool TryGetEntityOfType(Type type, out Property<Entity> entity)
         {
             entity = Entities.Find(entity => entity.Value.Type.Value == type);
             return entity != null;

@@ -7,18 +7,20 @@ namespace Generation.Data
 {
     public class Entity
     {
+        public readonly Property<Chunk> Chunk = new();
         public readonly Property<Vector3> Position = new();
         public readonly Property<Type> Type = new();
         public readonly Dictionary<string, IProperty> Properties = new();
 
-        public Entity(Type type, Vector3 position = default)
+        public Entity(Type type, Chunk chunk, Vector3 position = default)
         {
             Type.Value = type;
+            Chunk.Value = chunk;
             Position.Value = position;
         }
 
-        public Entity(Type type, Vector3 position = default, params (string key, IProperty value)[] properties)
-            : this(type, position)
+        public Entity(Type type, Chunk chunk, Vector3 position = default, params (string key, IProperty value)[] properties)
+            : this(type, chunk, position)
         {
             foreach (var (key, value) in properties)
                 Properties[key] = value;

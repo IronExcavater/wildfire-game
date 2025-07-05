@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Generation.Objects;
 using UnityEngine;
@@ -9,7 +9,7 @@ namespace Generation.Data
 {
     public sealed class World
     {
-        public Dictionary<Vector2Int, Chunk> Chunks = new();
+        public ConcurrentDictionary<Vector2Int, Chunk> Chunks = new();
 
         // Not performant
         public async Task<float> GetAverageHeight(Vector2 worldPosition, int radius)

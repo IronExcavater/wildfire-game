@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Generation.Data;
+using Generation.Jobs;
 using Generation.Objects;
 using UnityEngine;
 using Utilities;
@@ -18,27 +19,22 @@ namespace Generation
         public static float CheckInterval => Instance._checkInterval;
 
         private Dictionary<Type, IObjectPool> _pools = new();
-        public IReadOnlyDictionary<Type, IObjectPool> Pools => _pools;
+        public static IReadOnlyDictionary<Type, IObjectPool> Pools => Instance._pools;
 
         [SerializeField] private GeneratorPools _generatorPools;
 
-        private readonly Dictionary<Vector2Int, TaskCompletionSource<List<DataObject<Entity>>>> _loadTasks = new();
-        private readonly Queue<Vector2Int> _loadQueue = new();
-
-        private readonly Dictionary<Vector2Int, TaskCompletionSource<bool>> _unloadTasks = new();
-        private readonly Queue<Vector2Int> _unloadQueue = new();
-
         private readonly Dictionary<Vector2Int, List<DataObject<Entity>>> _instances = new();
+        public static IReadOnlyDictionary<Vector2Int, List<DataObject<Entity>>> Instances => Instance._instances;
 
         private Camera _camera;
 
-        public void AddPool<T>(params T[] prefabs) where T : DataObject<Entity>
+        public static void AddPool<T>(params T[] prefabs) where T : DataObject<Entity>
         {
-            var pool = new ObjectPool<T>(10, transform, prefabs);
-            _pools.Add(typeof(T), pool);
+            var pool = new ObjectPool<T>(10, Instance.transform, prefabs);
+            Instance._pools.Add(typeof(T), pool);
         }
 
-        public ObjectPool<T> GetPool<T>() where T : MonoBehaviour
+        public static ObjectPool<T> GetPool<T>() where T : MonoBehaviour
         {
             var type = typeof(T);
             if (GetPool(type) is ObjectPool<T> pool)
@@ -50,53 +46,78 @@ namespace Generation
             );
         }
 
-        public IObjectPool GetPool(Type type)
+        public static IObjectPool GetPool(Type type)
         {
-            if (_pools.TryGetValue(type, out var pool))
+            if (Instance._pools.TryGetValue(type, out var pool))
                 return pool;
 
             throw new InvalidOperationException($"ObjectPool<{type.Name}> not found");
         }
 
-        public static Task<List<DataObject<Entity>>> GetChunk(Vector2Int position)
+        public static List<DataObject<Entity>> GetInstancesAtPosition(Vector2Int position)
         {
-            lock (Instance._instances) if (Instance._instances.TryGetValue(position, out var data)) return Task.FromResult(data);
-
-            lock (Instance._loadTasks)
-            lock (Instance._loadQueue)
-            {
-                if (Instance._loadTasks.TryGetValue(position, out var tcs)) return tcs.Task;
-
-                tcs = new TaskCompletionSource<List<DataObject<Entity>>>();
-                Instance._loadQueue.Enqueue(position);
-                Instance._loadTasks.Add(position, tcs);
-                return tcs.Task;
-            }
+            return Instance._instances[position];
         }
 
-        public static Task<bool> RemoveChunk(Vector2Int position)
+        public static bool TryGetInstancesAtPosition(Vector2Int position, out List<DataObject<Entity>> instances)
         {
-            lock (Instance._instances) if (!Instance._instances.ContainsKey(position)) return Task.FromResult(true);
-
-            lock (Instance._unloadTasks)
-            lock (Instance._unloadQueue)
-            {
-                if (Instance._unloadTasks.TryGetValue(position, out var tcs)) return tcs.Task;
-
-                tcs = new TaskCompletionSource<bool>();
-                Instance._unloadQueue.Enqueue(position);
-                Instance._unloadTasks.Add(position, tcs);
-                return tcs.Task;
-            }
+            return Instance._instances.TryGetValue(position, out instances);
         }
 
-        private async void LoadChunkAsync(Vector2Int position)
+        public static void SetInstancesAtPosition(Vector2Int position, List<DataObject<Entity>> instances)
         {
-            //if (_instances.ContainsKey(position)) return;
+            Instance._instances[position] = instances;
+        }
+
+        public static List<DataObject<Entity>> GetInstancesOfTypeAtPosition(Vector2Int position, Type type)
+        {
+            return GetInstancesAtPosition(position).FindAll(instance => instance.GetType() == type);
+        }
+
+        public static DataObject<Entity> GetInstanceOfTypeAtPosition(Vector2Int position, Type type)
+        {
+            return GetInstancesAtPosition(position).Find(instance => instance.GetType() == type);
+        }
+
+        public static bool TryGetInstancesOfTypeAtPosition(Vector2Int position, Type type, out List<DataObject<Entity>> instances)
+        {
+            instances = GetInstancesAtPosition(position).FindAll(instance => instance.GetType() == type);
+            return instances.Count > 0;
+        }
+
+        public static bool TryGetInstanceOfTypeAtPosition(Vector2Int position, Type type, out DataObject<Entity> instances)
+        {
+            instances = GetInstancesAtPosition(position).Find(instance => instance.GetType() == type);
+            return instances != null;
+        }
+
+        public static async Task<List<DataObject<Entity>>> GetChunk(Vector2Int position)
+        {
+            if (!TryGetInstancesAtPosition(position, out var instances))
+            {
+                instances = await JobManager.Enqueue(new LoadChunkJob(position));
+                Instance._instances[position] = instances;
+            }
+
+            return instances;
+        }
+
+        public static async Task<bool> RemoveChunk(Vector2Int position)
+        {
+            if (TryGetInstancesAtPosition(position, out _))
+            {
+                await JobManager.Enqueue(new UnloadChunkJob(position));
+            }
+
+            return true;
+        }
+
+        /*private async void LoadChunkAsync(Vector2Int position)
+        {
+            if (_instances.ContainsKey(position) ||
+                _loadTasks.ContainsKey(position)) return;
 
             var instances = new List<DataObject<Entity>>();
-            _instances[position] = instances;
-
             var chunk = await WorldGenerator.GetChunk(position);
 
             foreach (var entity in chunk.Entities)
@@ -109,13 +130,15 @@ namespace Generation
                 instance.Data.Bind(entity);
             }
 
+            _instances[position] = instances;
             if (_loadTasks.Remove(position, out var tcs)) tcs.SetResult(instances);
             Debug.Log($"Loaded chunk at {position}");
         }
 
         private void UnloadChunk(Vector2Int position)
         {
-            if (!_instances.TryGetValue(position, out var instances)) return;
+            if (!_instances.TryGetValue(position, out var instances) ||
+                _unloadTasks.ContainsKey(position)) return;
 
             foreach (var instance in instances)
             {
@@ -128,22 +151,18 @@ namespace Generation
             _instances.Remove(position);
             if (_unloadTasks.Remove(position, out var tcs)) tcs.SetResult(true);
             Debug.Log($"Unloaded chunk at {position}");
-        }
+        }*/
 
         private void UpdateVisibleChunks(Camera camera)
         {
             if (camera == null) return;
 
-            var cameraPosition = camera.transform.position;
             var chunks = WorldGenerator.World.Chunks;
             var sqrRadius = LoadRadius * LoadRadius;
 
             if (chunks == null) return;
 
-            var cameraChunkPosition = new Vector2Int(
-                Mathf.FloorToInt(cameraPosition.x / WorldGenerator.ChunkSize),
-                Mathf.FloorToInt(cameraPosition.z / WorldGenerator.ChunkSize)
-            );
+            var cameraChunkPosition = CameraChunkPosition();
 
             foreach (var position in _instances.Keys)
             {
@@ -158,6 +177,19 @@ namespace Generation
                 if ((position - cameraChunkPosition).sqrMagnitude <= sqrRadius)
                     GetChunk(position);
             }
+        }
+
+        public static Vector3 CameraPosition() => Instance._camera?.transform.position ?? Vector3.zero;
+
+        public static Vector2Int CameraChunkPosition()
+        {
+            if (Instance._camera == null) return new Vector2Int(int.MaxValue, int.MaxValue);
+
+            var cameraPosition = Instance._camera.transform.position;
+            return new Vector2Int(
+                Mathf.FloorToInt(cameraPosition.x / WorldGenerator.ChunkSize),
+                Mathf.FloorToInt(cameraPosition.z / WorldGenerator.ChunkSize)
+            );
         }
 
         private (Type, IObjectPool) TransformEntry(string key, List<GameObject> value)
@@ -208,12 +240,6 @@ namespace Generation
         {
             if (_camera == null) _camera = Camera.main;
             UpdateVisibleChunks(_camera);
-
-            while (_loadQueue.Count > 0)
-                LoadChunkAsync(_loadQueue.Dequeue());
-
-            while (_unloadQueue.Count > 0)
-                UnloadChunk(_unloadQueue.Dequeue());
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Generation.Data;
+using Generation.Jobs;
 using UnityEngine;
 using Utilities.Observables;
 
@@ -20,17 +22,15 @@ namespace Generation.Objects
             {
                 if (value == _lod) return;
                 _lod = value;
-
-                LoadMeshAsync(_lod);
+                SetMesh(Lod);
             }
         }
-
-        private Camera _camera;
 
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
         private MeshCollider _meshCollider;
 
+        private readonly Property<Chunk> _chunk = new();
         private readonly Property<Vector3> _position = new();
         private readonly Property<float[,]> _heightmap = new();
 
@@ -48,42 +48,37 @@ namespace Generation.Objects
             _heightmap.AddListener((_, _) =>
             {
                 _meshes.Clear();
-                LoadMeshAsync(Lod);
+                SetMesh(Lod);
             });
         }
 
         protected override void OnDataChanged(PropertyBase<Entity, Entity, ValueChange<Entity>> property, ValueChange<Entity> change)
         {
+            _chunk.BindBidirectional(change.NewValue.Chunk);
             _position.BindBidirectional(change.NewValue.Position);
 
             if (change.NewValue.TryGetProperty("Heightmap", out Property<float[,]> heightmap))
                 _heightmap.BindBidirectional(heightmap);
         }
 
-        private async void LoadMeshAsync(int lod)
+        public async Task SetMesh(int lod)
         {
-            if (!_heightmap.IsBound && _meshFilter == null) return;
-
             if (!_meshes.TryGetValue(lod, out var mesh))
             {
-                var meshData = await GenerateMeshAsync(lod);
-                mesh = new Mesh
-                {
-                    vertices = meshData.vertices,
-                    uv = meshData.uvs,
-                    normals = meshData.normals,
-                    triangles = meshData.triangles
-                };
+                mesh = await JobManager.Enqueue(new BuildTerrainJob(_chunk.Value.Position, Lod));
                 _meshes[lod] = mesh;
             }
 
             _meshFilter.sharedMesh = mesh;
         }
 
-        private async Task<(Vector3[] vertices, Vector2[] uvs, Vector3[] normals, int[] triangles)> GenerateMeshAsync(int lod)
+        public async Task<(Vector3[] vertices, Vector2[] uvs, Vector3[] normals, int[] triangles)>
+            GenerateMeshAsync(int lod, CancellationToken token)
         {
             return await Task.Run(async () =>
             {
+                token.ThrowIfCancellationRequested();
+
                 var chunkSize = WorldGenerator.ChunkSize;
                 var resolution = WorldGenerator.Resolution;
                 var step = 1 << lod;
@@ -119,6 +114,8 @@ namespace Generation.Objects
                     vertices[i] = new Vector3(localX, h, localY);
                     uvs[i] = worldPos;
                     normals[i] = await WorldGenerator.World.GetNormal(worldPos);
+
+                    token.ThrowIfCancellationRequested();
                 }
 
                 var tri = 0;
@@ -135,6 +132,8 @@ namespace Generation.Objects
                     triangles[tri++] = i;
                     triangles[tri++] = i + width + 1;
                     triangles[tri++] = i + 1;
+
+                    token.ThrowIfCancellationRequested();
                 }
 
                 var v = vertexCount;
@@ -173,6 +172,8 @@ namespace Generation.Objects
                     triangles[tri++] = v;
                     triangles[tri++] = v - 1;
                     v++;
+
+                    token.ThrowIfCancellationRequested();
                 }
 
                 for (var x = 0; x < width - 1; x++)
@@ -185,23 +186,20 @@ namespace Generation.Objects
                     AddSkirt(y * width, (y - 1) * width);
 
                 return (vertices, uvs, normals, triangles);
-            });
+            }, token);
         }
 
         private void Update()
         {
-            if (_camera == null) _camera = Camera.main;
-
-            Lod = GetLod(_camera);
+            Lod = GetLod();
         }
 
-        private int GetLod(Camera camera)
+        private int GetLod()
         {
             var maxLod = WorldGenerator.MaxLodLevel;
-            if (camera == null) return maxLod;
-
-            var distance = Vector3.Distance(_camera.transform.position, transform.position);
             var chunkSize = WorldGenerator.ChunkSize;
+
+            var distance = Vector3.Distance(WorldLoader.CameraPosition(), transform.position);
             if (distance < chunkSize) return 0;
 
             var lod = Mathf.FloorToInt(Mathf.Log(distance / chunkSize, 2));

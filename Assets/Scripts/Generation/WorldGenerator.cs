@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Generation.Data;
+using Generation.Jobs;
 using Generation.Passes;
 using UnityEngine;
 using Utilities;
@@ -26,9 +27,6 @@ namespace Generation
 
         [SerializeField] private GeneratorPasses _generatorPasses;
 
-        private readonly Dictionary<Vector2Int, TaskCompletionSource<Chunk>> _generateTasks = new();
-        private readonly Queue<Vector2Int> _generateQueue = new();
-
         public void AddPass(GeneratorPass pass) => _passes.Add(pass);
 
         protected override void Awake()
@@ -37,7 +35,18 @@ namespace Generation
             if (_generatorPasses) _passes.AddRange(_generatorPasses.passes);
         }
 
-        public static Task<Chunk> GetChunk(Vector2Int position)
+        public static async Task<Chunk> GetChunk(Vector2Int position)
+        {
+            if (!World.Chunks.TryGetValue(position, out var chunk))
+            {
+                chunk = await JobManager.Enqueue(new GenerateChunkJob(position));
+                World.Chunks[position] = chunk;
+            }
+
+            return chunk;
+        }
+
+        /*public static Task<Chunk> GetChunk(Vector2Int position)
         {
             lock (World.Chunks) if (World.Chunks.TryGetValue(position, out var chunk)) return Task.FromResult(chunk);
 
@@ -55,7 +64,7 @@ namespace Generation
 
         private async void GenerateChunkAsync(Vector2Int position)
         {
-            //lock (World.Chunks) if (World.Chunks.TryGetValue(position, out _)) return;
+            lock (World.Chunks) if (World.Chunks.TryGetValue(position, out _) || _generateTasks.ContainsKey(position)) return;
 
             await Task.Run(() =>
             {
@@ -69,12 +78,6 @@ namespace Generation
                 if (_generateTasks.Remove(position, out var tcs)) tcs.SetResult(chunk);
                 Debug.Log($"Generated chunk at {position}");
             });
-        }
-
-        private void Update()
-        {
-            while (_generateQueue.Count > 0)
-                GenerateChunkAsync(_generateQueue.Dequeue());
-        }
+        }*/
     }
 }

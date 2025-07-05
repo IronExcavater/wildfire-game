@@ -22,7 +22,7 @@ namespace Generation.Passes
 
             if (!chunk.TryGetEntityOfType(typeof(TerrainObject), out var terrain))
             {
-                terrain = new Property<Entity>(new Entity(typeof(TerrainObject)));
+                terrain = new Property<Entity>(new Entity(typeof(TerrainObject), chunk));
                 chunk.AddEntity(terrain);
             }
 
