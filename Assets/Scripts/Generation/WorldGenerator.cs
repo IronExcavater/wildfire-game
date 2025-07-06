@@ -45,39 +45,5 @@ namespace Generation
 
             return chunk;
         }
-
-        /*public static Task<Chunk> GetChunk(Vector2Int position)
-        {
-            lock (World.Chunks) if (World.Chunks.TryGetValue(position, out var chunk)) return Task.FromResult(chunk);
-
-            lock (Instance._generateTasks)
-            lock (Instance._generateQueue)
-            {
-                if (Instance._generateTasks.TryGetValue(position, out var tcs)) return tcs.Task;
-
-                tcs = new TaskCompletionSource<Chunk>();
-                Instance._generateQueue.Enqueue(position);
-                Instance._generateTasks.Add(position, tcs);
-                return tcs.Task;
-            }
-        }
-
-        private async void GenerateChunkAsync(Vector2Int position)
-        {
-            lock (World.Chunks) if (World.Chunks.TryGetValue(position, out _) || _generateTasks.ContainsKey(position)) return;
-
-            await Task.Run(() =>
-            {
-                var chunk = new Chunk(position);
-
-                foreach (var pass in Passes)
-                    pass.Apply(World, chunk);
-
-                lock (World.Chunks) World.Chunks[position] = chunk;
-
-                if (_generateTasks.Remove(position, out var tcs)) tcs.SetResult(chunk);
-                Debug.Log($"Generated chunk at {position}");
-            });
-        }*/
     }
 }

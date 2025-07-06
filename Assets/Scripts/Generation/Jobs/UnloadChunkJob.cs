@@ -20,6 +20,7 @@ namespace Generation.Jobs
                     instance.Data.Unbind();
                     WorldLoader.GetPool(type).Release(instance);
                 }
+                JobManager.CancelAllJobsAtPosition(Position);
             }
 
             CompleteSource.SetResult(true);

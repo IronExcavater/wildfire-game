@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,31 +11,80 @@ namespace Generation
 {
     public class JobManager : Singleton<JobManager>
     {
+        private readonly ConcurrentQueue<IJob> _stagedJobs = new();
         private readonly SortedSet<IJob> _pendingJobs = new();
+        private readonly HashSet<IJob> _jobLookup = new();
 
-        private const int MaxConcurrentJobs = 8;
+        private const int MaxConcurrentJobs = 10000;
         private int _runningJobs;
-        private Camera _camera;
 
         public static Task<T> Enqueue<T>(JobBase<T> job)
         {
             if (TryGetExistingJob(job, out var existingJob))
                 return existingJob.CompleteSource.Task;
 
-            Instance._pendingJobs.Add(job);
+            Debug.Log($"Staged {job.Type} job at {job.Position}");
+
+            Instance._stagedJobs.Enqueue(job);
+            Instance._jobLookup.Add(job);
             return job.CompleteSource.Task;
         }
 
         public static bool TryGetExistingJob<TComplete>(JobBase<TComplete> job, out JobBase<TComplete> existingJob)
         {
-            Instance._pendingJobs.TryGetValue(job, out var ijob);
-            existingJob = (JobBase<TComplete>)ijob;
-            return existingJob != null;
+            if (Instance._jobLookup.TryGetValue(job, out var ijob) && ijob is JobBase<TComplete> typed)
+            {
+                existingJob = typed;
+                return true;
+            }
+
+            existingJob = null;
+            return false;
+        }
+
+        public static void CancelAllJobsOfTypeAtPosition<TJob>(Vector2Int position) where TJob : IJob
+        {
+            foreach (var job in Instance._jobLookup.Where(j => j.Position == position && j is TJob).ToList())
+                job.Cancel();
+        }
+
+        public static void CancelAllJobsAtPosition(Vector2Int position)
+        {
+            foreach (var job in Instance._jobLookup.Where(j => j.Position == position).ToList())
+                job.Cancel();
+        }
+
+        public static void CancelAllJobs()
+        {
+            foreach (var job in Instance._jobLookup.ToList())
+                job.Cancel();
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            #if UNITY_EDITOR
+            UnityEditor.EditorApplication.playModeStateChanged += state =>
+            {
+                if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+                    CancelAllJobs();
+            };
+            #endif
         }
 
         private void Update()
         {
-            RecalculatePriorities();
+            while (_stagedJobs.TryDequeue(out var job))
+            {
+                job.Priority = ComputePriority(job.Position);
+
+                if (_pendingJobs.Add(job))
+                {
+                    Debug.Log($"Enqueued {job.Type} job at {job.Position} with priority {job.Priority}");
+                    continue;
+                }
+                Debug.LogError($"Failed to enqueue {job.Type} job at {job.Position}");
+            }
 
             while (_runningJobs < MaxConcurrentJobs & _pendingJobs.Count > 0)
             {
@@ -52,40 +102,26 @@ namespace Generation
         {
             try
             {
+                Debug.Log($"Started {job.Type} job at {job.Position} with priority {job.Priority}");
                 await job.ExecuteAsync();
+                Debug.Log($"Completed {job.Type} job at {job.Position} with priority {job.Priority}");
             }
             catch (OperationCanceledException)
             {
             }
             catch (Exception e)
             {
-                Debug.LogError($"Job {job.Type} at {job.Position} threw an exception: {e}");
+                Debug.LogError($"Failed {job.Type} job at {job.Position} threw an exception: {e}");
             }
             finally
             {
+                _jobLookup.Remove(job);
                 _runningJobs--;
-            }
-        }
-
-        private void RecalculatePriorities()
-        {
-            foreach (var job in _pendingJobs.ToList())
-            {
-                var old = job.Priority;
-                job.Priority = ComputePriority(job.Position);
-
-                if (Math.Abs(old - job.Priority) > 0.01f)
-                {
-                    _pendingJobs.Remove(job);
-                    _pendingJobs.Add(job);
-                }
             }
         }
 
         private float ComputePriority(Vector2Int position)
         {
-            if (_camera == null) _camera = Camera.main;
-
             var cameraChunk = WorldLoader.CameraChunkPosition();
             return (position - cameraChunk).magnitude;
         }

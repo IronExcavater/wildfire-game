@@ -15,9 +15,6 @@ namespace Generation
         [SerializeField, Range(1, 1000)] private float _loadRadius = 10;
         public static float LoadRadius => Instance._loadRadius;
 
-        private float _checkInterval = 0.5f;
-        public static float CheckInterval => Instance._checkInterval;
-
         private Dictionary<Type, IObjectPool> _pools = new();
         public static IReadOnlyDictionary<Type, IObjectPool> Pools => Instance._pools;
 
@@ -64,11 +61,6 @@ namespace Generation
             return Instance._instances.TryGetValue(position, out instances);
         }
 
-        public static void SetInstancesAtPosition(Vector2Int position, List<DataObject<Entity>> instances)
-        {
-            Instance._instances[position] = instances;
-        }
-
         public static List<DataObject<Entity>> GetInstancesOfTypeAtPosition(Vector2Int position, Type type)
         {
             return GetInstancesAtPosition(position).FindAll(instance => instance.GetType() == type);
@@ -112,47 +104,6 @@ namespace Generation
             return true;
         }
 
-        /*private async void LoadChunkAsync(Vector2Int position)
-        {
-            if (_instances.ContainsKey(position) ||
-                _loadTasks.ContainsKey(position)) return;
-
-            var instances = new List<DataObject<Entity>>();
-            var chunk = await WorldGenerator.GetChunk(position);
-
-            foreach (var entity in chunk.Entities)
-            {
-                var type = entity.Value.Type.Value;
-                var pool = GetPool(type);
-                var instance = (DataObject<Entity>)pool.Get();
-
-                instances.Add(instance);
-                instance.Data.Bind(entity);
-            }
-
-            _instances[position] = instances;
-            if (_loadTasks.Remove(position, out var tcs)) tcs.SetResult(instances);
-            Debug.Log($"Loaded chunk at {position}");
-        }
-
-        private void UnloadChunk(Vector2Int position)
-        {
-            if (!_instances.TryGetValue(position, out var instances) ||
-                _unloadTasks.ContainsKey(position)) return;
-
-            foreach (var instance in instances)
-            {
-                var type = instance.GetType();
-
-                instance.Data.Unbind();
-                GetPool(type).Release(instance);
-            }
-
-            _instances.Remove(position);
-            if (_unloadTasks.Remove(position, out var tcs)) tcs.SetResult(true);
-            Debug.Log($"Unloaded chunk at {position}");
-        }*/
-
         private void UpdateVisibleChunks(Camera camera)
         {
             if (camera == null) return;
@@ -167,7 +118,7 @@ namespace Generation
             foreach (var position in _instances.Keys)
             {
                 if ((position - cameraChunkPosition).sqrMagnitude > sqrRadius)
-                    RemoveChunk(position);
+                    _ = RemoveChunk(position);
             }
 
             for (var y = -Mathf.FloorToInt(LoadRadius); y <= Mathf.CeilToInt(LoadRadius); y++)
@@ -175,7 +126,7 @@ namespace Generation
             {
                 var position = cameraChunkPosition + new Vector2Int(x, y);
                 if ((position - cameraChunkPosition).sqrMagnitude <= sqrRadius)
-                    GetChunk(position);
+                    _ = GetChunk(position);
             }
         }
 

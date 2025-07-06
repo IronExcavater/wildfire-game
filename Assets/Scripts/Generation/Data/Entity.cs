@@ -43,5 +43,10 @@ namespace Generation.Data
                 return casted;
             return null;
         }
+
+        public override string ToString()
+        {
+            return $"{Type.Value.Name} at Chunk {Chunk.Value.Position}";
+        }
     }
 }

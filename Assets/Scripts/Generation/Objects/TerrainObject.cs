@@ -22,7 +22,7 @@ namespace Generation.Objects
             {
                 if (value == _lod) return;
                 _lod = value;
-                SetMesh(Lod);
+                _ = SetMesh(Lod);
             }
         }
 
@@ -44,12 +44,18 @@ namespace Generation.Objects
             _meshRenderer = GetComponent<MeshRenderer>();
             _meshCollider = GetComponent<MeshCollider>();
 
+            Lod = GetLod();
             _position.AddListener((_, change) => transform.position = change.NewValue);
             _heightmap.AddListener((_, _) =>
             {
                 _meshes.Clear();
-                SetMesh(Lod);
+                _ = SetMesh(Lod);
             });
+        }
+
+        private void Update()
+        {
+            Lod = GetLod();
         }
 
         protected override void OnDataChanged(PropertyBase<Entity, Entity, ValueChange<Entity>> property, ValueChange<Entity> change)
@@ -65,11 +71,12 @@ namespace Generation.Objects
         {
             if (!_meshes.TryGetValue(lod, out var mesh))
             {
-                mesh = await JobManager.Enqueue(new BuildTerrainJob(_chunk.Value.Position, Lod));
+                mesh = await JobManager.Enqueue(new BuildTerrainJob(_chunk.Value.Position, lod));
                 _meshes[lod] = mesh;
             }
 
-            _meshFilter.sharedMesh = mesh;
+            if (Lod == lod) _meshFilter.sharedMesh = mesh;
+            else _ = SetMesh(Lod);
         }
 
         public async Task<(Vector3[] vertices, Vector2[] uvs, Vector3[] normals, int[] triangles)>
@@ -187,11 +194,6 @@ namespace Generation.Objects
 
                 return (vertices, uvs, normals, triangles);
             }, token);
-        }
-
-        private void Update()
-        {
-            Lod = GetLod();
         }
 
         private int GetLod()

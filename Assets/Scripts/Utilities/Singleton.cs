@@ -17,7 +17,7 @@ namespace Utilities
         {
             get
             {
-                if (_instance == null) _instance = FindAnyObjectByType<T>();
+                if (_instance == null) Debug.LogError($"No instance of Singleton<{typeof(T).Name}> found in scene.");
                 return _instance;
             }
         }

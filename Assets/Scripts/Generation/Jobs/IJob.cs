@@ -13,7 +13,7 @@ namespace Generation.Jobs
         UnloadChunk
     }
 
-    public abstract class IJob : IComparable<IJob>
+    public abstract class IJob : IComparable<IJob>, IEquatable<IJob>
     {
         public ChunkJobType Type { get; }
         public Vector2Int Position { get; }
@@ -26,12 +26,23 @@ namespace Generation.Jobs
             Position = position;
         }
 
-        public int CompareTo(IJob other) => Priority.CompareTo(other.Priority);
+        public virtual int CompareTo(IJob other) =>
+            (Priority, Position.x, Position.y, (int)Type).CompareTo(
+                (other.Priority, other.Position.x, other.Position.y, (int)other.Type));
+
+        public bool Equals(IJob other) =>
+            other != null &&
+            Position.Equals(other.Position) &&
+            Type.Equals(other.Type);
+        public override bool Equals(object obj) => obj is IJob other && Equals(other);
+
+        public override int GetHashCode() => HashCode.Combine(Position, (int)Type);
 
         public abstract Task ExecuteAsync();
+        public abstract void Cancel();
     }
 
-    public abstract class JobBase<TComplete> : IJob, IEquatable<JobBase<TComplete>>
+    public abstract class JobBase<TComplete> : IJob
     {
         public TaskCompletionSource<TComplete> CompleteSource { get; } = new();
         public CancellationTokenSource CancelSource { get; } = new();
@@ -40,8 +51,9 @@ namespace Generation.Jobs
         {
         }
 
-        public bool Equals(JobBase<TComplete> other) => other != null && Position.Equals(other.Position) && Type.Equals(other.Type);
-        public override bool Equals(object obj) => obj is JobBase<TComplete> other && Equals(other);
-        public override int GetHashCode() => HashCode.Combine(Position, (int)Type);
+        public override void Cancel()
+        {
+            CancelSource.Cancel();
+        }
     }
 }

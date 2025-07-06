@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Generation.Objects;
 using UnityEngine;
 
@@ -28,5 +29,19 @@ namespace Generation.Jobs
 
             CompleteSource.SetResult(mesh);
         }
+
+        public override int CompareTo(IJob other)
+        {
+            var cmp = base.CompareTo(other);
+            return other is BuildTerrainJob btj && cmp == 0
+                ? Lod.CompareTo(btj.Lod)
+                : cmp;
+        }
+
+        public override bool Equals(object obj) =>
+            obj is BuildTerrainJob other &&
+            base.Equals(other) &&
+            Lod.Equals(other.Lod);
+        public override int GetHashCode() => HashCode.Combine(Type, Position, Lod);
     }
 }
