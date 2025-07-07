@@ -4,8 +4,8 @@ using Editor.CssRect;
 using Editor.Utilities;
 using UnityEditor;
 using UnityEngine;
-using Utilities;
 using Utilities.Attributes;
+using Utilities.Serializables;
 
 namespace Editor.Drawers
 {

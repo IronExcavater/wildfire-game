@@ -21,7 +21,11 @@ namespace Generation
         public static Task<T> Enqueue<T>(JobBase<T> job)
         {
             if (TryGetExistingJob(job, out var existingJob))
+            {
+                Debug.LogWarning(
+                    $"Existing {existingJob} found, {(existingJob.IsRunning ? "and is active!" : "but is stale?")}");
                 return existingJob.CompleteSource.Task;
+            }
 
             Debug.Log($"Staged {job.Type} job at {job.Position}");
 

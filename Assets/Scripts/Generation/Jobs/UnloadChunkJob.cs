@@ -13,6 +13,9 @@ namespace Generation.Jobs
         {
             if (WorldLoader.TryGetInstancesAtPosition(Position, out var instances))
             {
+                JobManager.CancelAllJobsOfTypeAtPosition<BuildTerrainJob>(Position);
+                JobManager.CancelAllJobsOfTypeAtPosition<LoadChunkJob>(Position);
+
                 if (instances != null)
                 {
                     foreach (var instance in instances)
@@ -23,9 +26,6 @@ namespace Generation.Jobs
                         WorldLoader.GetPool(type).Release(instance);
                     }
                 }
-
-                JobManager.CancelAllJobsOfTypeAtPosition<BuildTerrainJob>(Position);
-                JobManager.CancelAllJobsOfTypeAtPosition<LoadChunkJob>(Position);
             }
 
             CompleteSource.SetResult(true);

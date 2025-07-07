@@ -107,6 +107,7 @@ namespace Generation.Objects
                 for (var y = 0; y < height; y++)
                 for (var x = 0; x < width; x++)
                 {
+                    token.ThrowIfCancellationRequested();
                     var stepX = x * step;
                     var stepY = y * step;
 
@@ -121,8 +122,6 @@ namespace Generation.Objects
                     vertices[i] = new Vector3(localX, h, localY);
                     uvs[i] = worldPos;
                     normals[i] = await WorldGenerator.World.GetNormal(worldPos);
-
-                    token.ThrowIfCancellationRequested();
                 }
 
                 var tri = 0;
@@ -130,6 +129,7 @@ namespace Generation.Objects
                 for (var y = 0; y < countY; y++)
                 for (var x = 0; x < countX; x++)
                 {
+                    token.ThrowIfCancellationRequested();
                     var i = y * width + x;
 
                     triangles[tri++] = i;
@@ -139,14 +139,13 @@ namespace Generation.Objects
                     triangles[tri++] = i;
                     triangles[tri++] = i + width + 1;
                     triangles[tri++] = i + 1;
-
-                    token.ThrowIfCancellationRequested();
                 }
 
                 var v = vertexCount;
 
                 void AddSkirt(int i1, int i2)
                 {
+                    token.ThrowIfCancellationRequested();
                     var v1 = vertices[i1];
                     var v2 = vertices[i2];
 
@@ -179,8 +178,6 @@ namespace Generation.Objects
                     triangles[tri++] = v;
                     triangles[tri++] = v - 1;
                     v++;
-
-                    token.ThrowIfCancellationRequested();
                 }
 
                 for (var x = 0; x < width - 1; x++)

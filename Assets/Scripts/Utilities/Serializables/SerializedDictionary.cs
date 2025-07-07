@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Utilities
+namespace Utilities.Serializables
 {
     /// <summary>
     /// Dictionary needs to be initialized at runtime, use SerializeDictionary.Initialize() in OnEnable().
