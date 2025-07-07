@@ -12,7 +12,7 @@ namespace Generation.Jobs
         {
         }
 
-        public override async Task ExecuteAsync()
+        public override async Task Start()
         {
             var chunk = await WorldGenerator.GetChunk(Position);
             var instances = new List<DataObject<Entity>>();

@@ -9,18 +9,23 @@ namespace Generation.Jobs
         {
         }
 
-        public override async Task ExecuteAsync()
+        public override async Task Start()
         {
             if (WorldLoader.TryGetInstancesAtPosition(Position, out var instances))
             {
-                foreach (var instance in instances)
+                if (instances != null)
                 {
-                    var type = instance.GetType();
+                    foreach (var instance in instances)
+                    {
+                        var type = instance.GetType();
 
-                    instance.Data.Unbind();
-                    WorldLoader.GetPool(type).Release(instance);
+                        instance.Data.Unbind();
+                        WorldLoader.GetPool(type).Release(instance);
+                    }
                 }
-                JobManager.CancelAllJobsAtPosition(Position);
+
+                JobManager.CancelAllJobsOfTypeAtPosition<BuildTerrainJob>(Position);
+                JobManager.CancelAllJobsOfTypeAtPosition<LoadChunkJob>(Position);
             }
 
             CompleteSource.SetResult(true);

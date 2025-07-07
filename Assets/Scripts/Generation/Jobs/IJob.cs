@@ -38,8 +38,10 @@ namespace Generation.Jobs
 
         public override int GetHashCode() => HashCode.Combine(Position, (int)Type);
 
-        public abstract Task ExecuteAsync();
+        public abstract Task Start();
         public abstract void Cancel();
+
+        public override string ToString() => $"{Type} job at {Position}";
     }
 
     public abstract class JobBase<TComplete> : IJob
@@ -53,6 +55,8 @@ namespace Generation.Jobs
 
         public override void Cancel()
         {
+            if (IsRunning)
+                Debug.Log($"Cancelled {ToString()}");
             CancelSource.Cancel();
         }
     }

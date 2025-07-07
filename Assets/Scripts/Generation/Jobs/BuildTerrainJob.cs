@@ -14,7 +14,7 @@ namespace Generation.Jobs
             Lod = lod;
         }
 
-        public override async Task ExecuteAsync()
+        public override async Task Start()
         {
             var instance = (TerrainObject)WorldLoader.GetInstanceOfTypeAtPosition(Position, typeof(TerrainObject));
 
@@ -43,5 +43,7 @@ namespace Generation.Jobs
             base.Equals(other) &&
             Lod.Equals(other.Lod);
         public override int GetHashCode() => HashCode.Combine(Type, Position, Lod);
+
+        public override string ToString() => $"{Type} {{ lod: {Lod} }} job at {Position}";
     }
 }

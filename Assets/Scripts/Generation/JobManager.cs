@@ -80,7 +80,7 @@ namespace Generation
 
                 if (_pendingJobs.Add(job))
                 {
-                    Debug.Log($"Enqueued {job.Type} job at {job.Position} with priority {job.Priority}");
+                    Debug.Log($"Enqueued {job}");
                     continue;
                 }
                 Debug.LogError($"Failed to enqueue {job.Type} job at {job.Position}");
@@ -102,16 +102,16 @@ namespace Generation
         {
             try
             {
-                Debug.Log($"Started {job.Type} job at {job.Position} with priority {job.Priority}");
-                await job.ExecuteAsync();
-                Debug.Log($"Completed {job.Type} job at {job.Position} with priority {job.Priority}");
+                Debug.Log($"Started {job}");
+                await job.Start();
+                Debug.Log($"Completed {job}");
             }
             catch (OperationCanceledException)
             {
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed {job.Type} job at {job.Position} threw an exception: {e}");
+                Debug.LogError($"Failed {job} threw an exception: {e}");
             }
             finally
             {

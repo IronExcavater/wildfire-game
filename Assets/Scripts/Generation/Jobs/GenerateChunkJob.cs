@@ -10,7 +10,7 @@ namespace Generation.Jobs
         {
         }
 
-        public override async Task ExecuteAsync()
+        public override async Task Start()
         {
             await Task.Run(() =>
             {
