@@ -40,7 +40,7 @@ namespace Generation
             if (!World.Chunks.TryGetValue(position, out var chunk))
             {
                 chunk = await JobManager.Enqueue(new GenerateChunkJob(position));
-                World.Chunks[position] = chunk;
+                World.Chunks.TryAdd(position, chunk);
             }
 
             return chunk;

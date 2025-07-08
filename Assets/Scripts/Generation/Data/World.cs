@@ -9,7 +9,7 @@ namespace Generation.Data
 {
     public sealed class World
     {
-        public ConcurrentDictionary<Vector2Int, Chunk> Chunks = new();
+        public readonly ConcurrentDictionary<Vector2Int, Chunk> Chunks = new();
 
         // Not performant
         public async Task<float> GetAverageHeight(Vector2 worldPosition, int radius)

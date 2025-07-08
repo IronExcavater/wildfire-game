@@ -99,7 +99,7 @@ namespace Generation
             if (TryGetInstancesAtPosition(position, out _))
             {
                 await JobManager.Enqueue(new UnloadChunkJob(position));
-                Instance._instances[position] = null;
+                Instance._instances.Remove(position);
             }
 
             return true;

@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Generation.Jobs;
 using UnityEngine;
@@ -13,24 +14,25 @@ namespace Generation
     {
         private readonly ConcurrentQueue<IJob> _stagedJobs = new();
         private readonly SortedSet<IJob> _pendingJobs = new();
-        private readonly HashSet<IJob> _jobLookup = new();
+        private readonly ConcurrentDictionary<IJob, IJob> _jobLookup = new();
 
         private const int MaxConcurrentJobs = 10000;
         private int _runningJobs;
 
         public static Task<T> Enqueue<T>(JobBase<T> job)
         {
-            if (TryGetExistingJob(job, out var existingJob))
+            var actual = (JobBase<T>)Instance._jobLookup.GetOrAdd(job, job);
+
+            if (!ReferenceEquals(actual, job))
             {
-                Debug.LogWarning(
-                    $"Existing {existingJob} found, {(existingJob.IsRunning ? "and is active!" : "but is stale?")}");
-                return existingJob.CompleteSource.Task;
+                if (!actual.IsRunning)
+                    Debug.LogWarning($"Existing {actual} is stale");
+                return actual.CompleteSource.Task;
             }
 
-            Debug.Log($"Staged {job.Type} job at {job.Position}");
+            Debug.Log($"Staged {job}");
 
             Instance._stagedJobs.Enqueue(job);
-            Instance._jobLookup.Add(job);
             return job.CompleteSource.Task;
         }
 
@@ -48,20 +50,26 @@ namespace Generation
 
         public static void CancelAllJobsOfTypeAtPosition<TJob>(Vector2Int position) where TJob : IJob
         {
-            foreach (var job in Instance._jobLookup.Where(j => j.Position == position && j is TJob).ToList())
-                job.Cancel();
+            foreach (var job in Instance._jobLookup.Values.Where(j => j.Position == position && j is TJob).ToList())
+                TryCancelJob(job);
         }
 
         public static void CancelAllJobsAtPosition(Vector2Int position)
         {
-            foreach (var job in Instance._jobLookup.Where(j => j.Position == position).ToList())
-                job.Cancel();
+            foreach (var job in Instance._jobLookup.Values.Where(j => j.Position == position).ToList())
+                TryCancelJob(job);
         }
 
         public static void CancelAllJobs()
         {
-            foreach (var job in Instance._jobLookup.ToList())
-                job.Cancel();
+            foreach (var job in Instance._jobLookup.Values.ToList())
+                TryCancelJob(job);
+        }
+
+        public static void TryCancelJob(IJob job)
+        {
+            Instance._jobLookup.TryRemove(job, out _);
+            job.Cancel();
         }
 
         protected override void Awake()
@@ -80,14 +88,14 @@ namespace Generation
         {
             while (_stagedJobs.TryDequeue(out var job))
             {
+                if (!job.IsRunning) continue;
+
                 job.Priority = ComputePriority(job.Position);
 
-                if (_pendingJobs.Add(job))
-                {
-                    Debug.Log($"Enqueued {job}");
-                    continue;
-                }
-                Debug.LogError($"Failed to enqueue {job.Type} job at {job.Position}");
+                if (!_pendingJobs.Add(job))
+                    throw new Exception($"Failed to enqueue {job.Type} job at {job.Position}");
+
+                Debug.Log($"Enqueued {job}");
             }
 
             while (_runningJobs < MaxConcurrentJobs & _pendingJobs.Count > 0)
@@ -95,7 +103,9 @@ namespace Generation
                 var job = _pendingJobs.Min;
                 _pendingJobs.Remove(job);
 
-                _runningJobs++;
+                if (!job.IsRunning) continue;
+
+                Interlocked.Increment(ref _runningJobs);
                 job.IsRunning = true;
 
                 _ = RunJobAsync(job);
@@ -119,8 +129,8 @@ namespace Generation
             }
             finally
             {
-                _jobLookup.Remove(job);
-                _runningJobs--;
+                _jobLookup.TryRemove(job, out _);
+                Interlocked.Decrement(ref _runningJobs);
             }
         }
 

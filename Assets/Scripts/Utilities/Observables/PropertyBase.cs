@@ -57,8 +57,8 @@ namespace Utilities.Observables
         {
             Unbind();
             _boundTo = other;
-            Value = other.Value;
-            other.AddListener(BindChanged);
+            Value = _boundTo.Value;
+            _boundTo.AddListener(BindChanged);
         }
 
         public void Unbind()
@@ -69,14 +69,20 @@ namespace Utilities.Observables
 
         public void BindBidirectional(PropertyBase<T, TValue, TChange> other)
         {
+            UnbindBidirectional();
             Bind(other);
             other.Bind(this);
         }
 
-        public void UnbindBidirectional(PropertyBase<T, TValue, TChange> other)
+        public void UnbindBidirectional()
         {
-            Unbind();
-            other.Unbind();
+            if (IsBound)
+            {
+                _boundTo.RemoveListener(BindChanged);
+                _boundTo._boundTo?.RemoveListener(_boundTo.BindChanged);
+                _boundTo._boundTo = null;
+            }
+            _boundTo = null;
         }
 
         protected abstract void BindChanged(PropertyBase<T, TValue, TChange> other, TChange change);

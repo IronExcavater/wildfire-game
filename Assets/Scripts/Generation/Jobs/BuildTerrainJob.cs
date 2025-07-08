@@ -20,9 +20,6 @@ namespace Generation.Jobs
 
             var meshData = await instance.GenerateMeshAsync(Lod, CancelSource.Token);
 
-            if (meshData.vertices == null || meshData.vertices.Length == 0)
-                Debug.LogError($"{ToString()} produced invalid mesh data:\n{meshData}");
-
             var mesh = new Mesh
             {
                 vertices = meshData.vertices,

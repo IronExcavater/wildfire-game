@@ -24,6 +24,7 @@ namespace Generation.Jobs
         {
             Type = type;
             Position = position;
+            IsRunning = true;
         }
 
         public virtual int CompareTo(IJob other) =>
@@ -58,6 +59,7 @@ namespace Generation.Jobs
             if (IsRunning)
                 Debug.Log($"Cancelled {ToString()}");
             CancelSource.Cancel();
+            IsRunning = false;
         }
     }
 }

@@ -20,6 +20,8 @@ namespace Utilities
         private readonly List<T> _prefabs;
         private readonly Transform _parent;
 
+        private readonly object _lock = new();
+
         public ObjectPool(int initialSize = 0, Transform parent = null, params T[] prefabs)
         {
             if (prefabs == null || prefabs.Length == 0)
@@ -37,6 +39,7 @@ namespace Utilities
             _objects.Add(mono);
             _pool.Enqueue(mono);
             mono.gameObject.SetActive(false);
+            mono.gameObject.name = $"{Type.Name} ({_objects.Count})";
             return mono;
         }
 
@@ -44,34 +47,46 @@ namespace Utilities
 
         public T GetTyped()
         {
-            if (_pool.Count <= 0) Instantiate();
-            var mono = _pool.Dequeue();
+            lock (_lock)
+            {
+                if (_pool.Count <= 0) Instantiate();
+                var mono = _pool.Dequeue();
 
-            mono.gameObject.SetActive(true);
-            return mono;
+                mono.gameObject.SetActive(true);
+                return mono;
+            }
         }
 
         public void Release(Object obj) => Release((T)obj);
 
         public void Release(T mono)
         {
-            mono.gameObject.SetActive(false);
-            _pool.Enqueue(mono);
+            lock (_lock)
+            {
+                mono.gameObject.SetActive(false);
+                _pool.Enqueue(mono);
+            }
         }
 
         public void Clear()
         {
-            foreach (var obj in _objects)
-                Object.Destroy(obj);
+            lock (_lock)
+            {
+                foreach (var obj in _objects)
+                    Object.Destroy(obj);
 
-            _objects.Clear();
-            _pool.Clear();
+                _objects.Clear();
+                _pool.Clear();
+            }
         }
 
         public override string ToString()
         {
-            var active = _objects.Count - _pool.Count;
-            return $"ObjectPool<{typeof(T).Name}> {{Total: {_objects.Count}, Active: {active}, Inactive: {_pool.Count}}}";
+            lock (_lock)
+            {
+                var active = _objects.Count - _pool.Count;
+                return $"ObjectPool<{typeof(T).Name}> {{Total: {_objects.Count}, Active: {active}, Inactive: {_pool.Count}}}";
+            }
         }
     }
 }
