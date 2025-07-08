@@ -18,7 +18,7 @@ namespace Generation.Jobs
         {
             var instance = (TerrainObject)WorldLoader.GetInstanceOfTypeAtPosition(Position, typeof(TerrainObject));
 
-            var meshData = await instance.GenerateMeshAsync(Lod, CancelSource.Token);
+            var meshData = await instance.GenerateMeshAsync(Lod, CancelSource.Token, this);
 
             var mesh = new Mesh
             {

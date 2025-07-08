@@ -44,11 +44,11 @@ namespace Generation.Objects
             _meshRenderer = GetComponent<MeshRenderer>();
             _meshCollider = GetComponent<MeshCollider>();
 
-            Lod = GetLod();
             _position.AddListener((_, change) => transform.position = change.NewValue);
             _heightmap.AddListener((_, _) =>
             {
                 _meshes.Clear();
+                gameObject.SetActive(false);
                 _ = SetMesh(Lod);
             });
         }
@@ -62,6 +62,7 @@ namespace Generation.Objects
         {
             _chunk.BindBidirectional(change.NewValue.Chunk);
             _position.BindBidirectional(change.NewValue.Position);
+            Lod = GetLod();
 
             if (change.NewValue.TryGetProperty("Heightmap", out Property<float[,]> heightmap))
                 _heightmap.BindBidirectional(heightmap);
@@ -75,12 +76,16 @@ namespace Generation.Objects
                 _meshes[lod] = mesh;
             }
 
-            if (Lod == lod) _meshFilter.sharedMesh = mesh;
+            if (Lod == lod)
+            {
+                _meshFilter.sharedMesh = mesh;
+                gameObject.SetActive(true);
+            }
             else _ = SetMesh(Lod);
         }
 
         public async Task<(Vector3[] vertices, Vector2[] uvs, Vector3[] normals, int[] triangles)>
-            GenerateMeshAsync(int lod, CancellationToken token)
+            GenerateMeshAsync(int lod, CancellationToken token, IJob parent = null)
         {
             return await Task.Run(async () =>
             {
@@ -117,11 +122,11 @@ namespace Generation.Objects
                     var worldPos = new Vector2(localX + _position.Value.x, localY + _position.Value.z);
 
                     var i = y * width + x;
-                    var h = await WorldGenerator.World.GetHeight(worldPos);
+                    var h = await WorldGenerator.World.GetHeight(worldPos, parent);
                     //var h = WorldGenerator.World.GetAverageHeight(new Vector2(localX + _position.Value.x, localY + _position.Value.z), step);
                     vertices[i] = new Vector3(localX, h, localY);
                     uvs[i] = worldPos;
-                    normals[i] = await WorldGenerator.World.GetNormal(worldPos);
+                    normals[i] = await WorldGenerator.World.GetNormal(worldPos, parent);
                 }
 
                 var tri = 0;
@@ -197,8 +202,11 @@ namespace Generation.Objects
         {
             var maxLod = WorldGenerator.MaxLodLevel;
             var chunkSize = WorldGenerator.ChunkSize;
+            var resolution = WorldGenerator.Resolution;
+            var worldOffset = chunkSize * resolution / 4;
 
-            var distance = Vector3.Distance(WorldLoader.CameraPosition(), transform.position);
+            var worldPosition = transform.position + new Vector3(worldOffset, 0, worldOffset);
+            var distance = Vector3.Distance(WorldLoader.CameraPosition(), worldPosition);
             if (distance < chunkSize) return 0;
 
             var lod = Mathf.FloorToInt(Mathf.Log(distance / chunkSize, 2));

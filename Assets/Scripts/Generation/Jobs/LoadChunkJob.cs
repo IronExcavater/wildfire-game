@@ -14,7 +14,7 @@ namespace Generation.Jobs
 
         public override async Task Start()
         {
-            var chunk = await WorldGenerator.GetChunk(Position);
+            var chunk = await WorldGenerator.GetChunk(Position, this);
             var instances = new List<DataObject<Entity>>();
 
             foreach (var entity in chunk.Entities)

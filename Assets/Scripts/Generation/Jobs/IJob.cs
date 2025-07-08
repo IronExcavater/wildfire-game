@@ -19,6 +19,7 @@ namespace Generation.Jobs
         public Vector2Int Position { get; }
         public float Priority { get; set; }
         public bool IsRunning { get; set; } = true;
+        public IJob Parent { get; set; }
 
         public IJob(ChunkJobType type, Vector2Int position)
         {
@@ -58,6 +59,7 @@ namespace Generation.Jobs
             if (IsRunning)
                 Debug.Log($"Cancelled {ToString()}");
             CancelSource.Cancel();
+            Parent?.Cancel();
             IsRunning = false;
         }
     }
