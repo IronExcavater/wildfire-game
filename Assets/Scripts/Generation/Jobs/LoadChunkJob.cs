@@ -26,8 +26,7 @@ namespace Generation.Jobs
                 var pool = WorldLoader.GetPool(type);
                 var instance = (DataObject<Entity>)pool.Get();
 
-                Debug.Log($"{ToString()}: Binding {instance.name} to chunk {chunk.Position} with data (ID: {entity.GetHashCode()}): {entity.Value}");
-                // instance.gameObject.name = entity.Value.ToString();
+                instance.gameObject.name = entity.Value.ToString();
 
                 instances.Add(instance);
                 instance.Data.Bind(entity);

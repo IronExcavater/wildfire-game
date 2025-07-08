@@ -17,6 +17,10 @@ namespace Generation
         private readonly ConcurrentDictionary<IJob, IJob> _jobLookup = new();
 
         private const int MaxConcurrentJobs = 10000;
+        // TODO: Implement proper job callstack to cancel and prioritise based on dependency.
+        // Otherwise, reasonable maxConcurrentJobs (eg. 8) will result in job deadlocks.
+        // Best to overhaul IJob to force dependencies to be known and started before itself, unlike currently.
+        // Though still allow for unknown dependencies during execution but are forced to be started without priority.
         private int _runningJobs;
 
         public static Task<T> Enqueue<T>(JobBase<T> job)

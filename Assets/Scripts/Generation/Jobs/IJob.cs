@@ -18,13 +18,12 @@ namespace Generation.Jobs
         public ChunkJobType Type { get; }
         public Vector2Int Position { get; }
         public float Priority { get; set; }
-        public bool IsRunning { get; set; }
+        public bool IsRunning { get; set; } = true;
 
         public IJob(ChunkJobType type, Vector2Int position)
         {
             Type = type;
             Position = position;
-            IsRunning = true;
         }
 
         public virtual int CompareTo(IJob other) =>
