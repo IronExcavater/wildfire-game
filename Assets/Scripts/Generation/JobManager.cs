@@ -16,11 +16,7 @@ namespace Generation
         private readonly SortedSet<IJob> _pendingJobs = new();
         private readonly ConcurrentDictionary<IJob, IJob> _jobLookup = new();
 
-        private const int MaxConcurrentJobs = 10000;
-        // TODO: Implement proper job callstack to cancel and prioritise based on dependency.
-        // Otherwise, reasonable maxConcurrentJobs (eg. 8) will result in job deadlocks.
-        // Best to overhaul IJob to force dependencies to be known and started before itself, unlike currently.
-        // Though still allow for unknown dependencies during execution but are forced to be started without priority.
+        private const int MaxConcurrentJobs = 8;
         private int _runningJobs;
 
         public static Task<T> Enqueue<T>(JobBase<T> job)
@@ -96,6 +92,12 @@ namespace Generation
 
                 job.Priority = ComputePriority(job.Position);
 
+                if (job.Parent != null)
+                {
+                    _ = RunJobAsync(job);
+                    continue;
+                }
+
                 if (!_pendingJobs.Add(job))
                     throw new Exception($"Failed to enqueue {job.Type} job at {job.Position}");
 
@@ -109,9 +111,6 @@ namespace Generation
 
                 if (!job.IsRunning) continue;
 
-                Interlocked.Increment(ref _runningJobs);
-                job.IsRunning = true;
-
                 _ = RunJobAsync(job);
             }
         }
@@ -120,6 +119,9 @@ namespace Generation
         {
             try
             {
+                Interlocked.Increment(ref _runningJobs);
+                job.IsRunning = true;
+
                 Debug.Log($"Started {job}");
                 await job.Start();
                 Debug.Log($"Completed {job}");

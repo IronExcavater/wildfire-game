@@ -35,11 +35,12 @@ namespace Generation
             if (_generatorPasses) _passes.AddRange(_generatorPasses.passes);
         }
 
-        public static async Task<Chunk> GetChunk(Vector2Int position)
+        public static async Task<Chunk> GetChunk(Vector2Int position, IJob parent = null)
         {
             if (!World.Chunks.TryGetValue(position, out var chunk))
             {
-                chunk = await JobManager.Enqueue(new GenerateChunkJob(position));
+                var generateJob = new GenerateChunkJob(position) { Parent = parent };
+                chunk = await JobManager.Enqueue(generateJob);
                 World.Chunks.TryAdd(position, chunk);
             }
 
