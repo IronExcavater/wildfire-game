@@ -69,7 +69,6 @@ namespace Generation.Data
         {
             Chunk.Value = null;
             Type.Value = null;
-            Position.Value = Vector3.zero;
             Properties.Clear();
         }
     }

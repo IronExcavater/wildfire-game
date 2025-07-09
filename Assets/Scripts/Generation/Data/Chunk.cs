@@ -82,11 +82,9 @@ namespace Generation.Data
 
         public void Dispose()
         {
+            _ = WorldLoader.RemoveChunk(Position);
             foreach (var entity in Entities)
-            {
                 entity.Value.Dispose();
-                _ = WorldLoader.RemoveChunk(Position);
-            }
             Entities.Clear();
         }
     }
