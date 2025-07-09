@@ -7,7 +7,7 @@ using Utilities.Observables;
 namespace Generation.Passes
 {
     [Serializable]
-    public class TerrainPass : GeneratorPass
+    public class HillPass : GeneratorPass
     {
         [Range(1, 100)] public float amplitude = 10f;
         [Range(0.001f, 0.5f)] public float frequency = 0.01f;
@@ -20,21 +20,7 @@ namespace Generation.Passes
             var chunkSize = WorldGenerator.ChunkSize;
             var size = chunkSize * WorldGenerator.Resolution;
 
-            if (!chunk.TryGetEntityOfType(typeof(TerrainObject), out var terrain))
-            {
-                terrain = new Property<Entity>(new Entity(typeof(TerrainObject), chunk));
-                chunk.AddEntity(terrain);
-            }
-
-            var worldPos = new Vector3(chunk.Position.x * chunkSize, 0, chunk.Position.y * chunkSize);
-            terrain.Value.Position.Value = worldPos;
-
-            if (!terrain.Value.TryGetProperty("Heightmap", out Property<float[,]> heightmap) ||
-                heightmap.Value.Length != (int)Math.Pow(size + 1, 2) || heightmap.Value.Rank != 2)
-            {
-                heightmap = new Property<float[,]>(new float[size + 1, size + 1]);
-                terrain.Value.SetProperty("Heightmap", heightmap);
-            }
+            var heightmap = chunk.GetHeightmap();
 
             var arbitraryOffset = 100000; // Temporary solution to resolve noise seams with negative numbers
 

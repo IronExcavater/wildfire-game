@@ -13,15 +13,22 @@ MonoBehaviour:
   m_Name: GeneratorPasses
   m_EditorClassIdentifier: 
   passes:
-  - rid: 9081719093430321260
+  - rid: 1915427534221344837
+  - rid: 1915427534221344866
   references:
     version: 2
     RefIds:
-    - rid: 9081719093430321260
-      type: {class: TerrainPass, ns: Generation.Passes, asm: Assembly-CSharp}
+    - rid: 1915427534221344837
+      type: {class: HillPass, ns: Generation.Passes, asm: Assembly-CSharp}
       data:
         amplitude: 10
         frequency: 0.01
         octaves: 4
         lacunarity: 2
         persistence: 0.5
+    - rid: 1915427534221344866
+      type: {class: MountainPass, ns: Generation.Passes, asm: Assembly-CSharp}
+      data:
+        weight: 1
+        frequency: 0.015
+        sharpness: 4

@@ -46,5 +46,11 @@ namespace Generation
 
             return chunk;
         }
+
+        public static void Regenerate()
+        {
+            Debug.LogWarning("Regenerating world");
+            World.Dispose();
+        }
     }
 }

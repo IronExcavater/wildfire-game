@@ -34,9 +34,11 @@ namespace Editor.CssRect
         public readonly Property<BoxPosition> Position = new();
         public readonly Property<BoxVec2> Offset = new();
 
+        public event Action<ValueChange<BoxRect>> OnChanged;
+
         public BoxRect(Vector2 position, Vector2 minSize, SerializedProperty property = null)
         {
-            InitalizeListeners();
+            InitializeListeners();
             ContainerPosition.Value = position;
             Property.Value = property;
             MinSize.Value = minSize;
@@ -45,7 +47,7 @@ namespace Editor.CssRect
 
         public BoxRect(BoxRect parent, float? height = null, float? width = null, Vector2? minSize = null)
         {
-            InitalizeListeners();
+            InitializeListeners();
             BoundsSize.Value = new Vector2(
                 width ?? parent.RectSize.Value.x,
                 height ?? EditorUtils.LineHeight
@@ -56,7 +58,7 @@ namespace Editor.CssRect
 
         public BoxRect(BoxRect parent, SerializedProperty property, float? width = null, Vector2? minSize = null)
         {
-            InitalizeListeners();
+            InitializeListeners();
             BoundsSize.Value = new Vector2(
                 width ?? parent.RectSize.Value.x,
                 EditorUtils.LineHeight
@@ -66,7 +68,7 @@ namespace Editor.CssRect
             MinSize.Value = minSize ?? BoundsSize.Value;
         }
 
-        private void InitalizeListeners()
+        private void InitializeListeners()
         {
             Parent.AddListener((_, change) =>
             {
@@ -238,7 +240,5 @@ namespace Editor.CssRect
             Property.Value = null;
             return false;
         }
-
-        public event Action<ValueChange<BoxRect>> OnChanged;
     }
 }

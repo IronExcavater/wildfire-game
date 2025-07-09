@@ -21,19 +21,15 @@ namespace Utilities.Observables
 
     public readonly struct ListChange<T> : IChange<T>
     {
-        private readonly List<T> _list;
-
+        private readonly IReadOnlyList<T> _list;
         private readonly List<T> _removedList;
-
         private readonly ListChangeType _type;
-        // Inclusive index
-        public readonly int From;
-        // Exclusive index
-        public readonly int To;
+        public readonly int From; // Inclusive index
+        public readonly int To; // Exclusive index
 
         public ListChange(List<T> list, ListChangeType type, int from, int to, List<T> removedList = null)
         {
-            _list = list;
+            _list = new List<T>(list);
             _removedList = removedList ?? new List<T>();
             _type = type;
             From = from;
@@ -46,12 +42,35 @@ namespace Utilities.Observables
         public bool WasReplaced => WasAdded && WasRemoved;
         public bool WasUpdated => _type == ListChangeType.Update;
 
-        public List<T> GetList => _list;
+        public IReadOnlyList<T> GetList => _list;
 
         public T GetPermutation(int index) => _list[Math.Clamp(index, From, To)];
 
         public List<T> GetAdded => WasAdded ? _list.GetRange(From, To - From) : new List<T>();
 
         public List<T> GetRemoved => _removedList;
+    }
+
+    public enum DictionaryChangeType { Add, Remove, Replace, Update, Clear, Set }
+
+    public readonly struct DictionaryChange<TKey, TValue> : IChange<TValue>
+    {
+        private readonly IReadOnlyDictionary<TKey, TValue> _dictionary;
+        public readonly DictionaryChangeType Type;
+        public readonly TKey Key;
+        public readonly TValue OldValue;
+        public readonly TValue NewValue;
+
+        public DictionaryChange(Dictionary<TKey, TValue> dictionary, DictionaryChangeType type, TKey key = default,
+            TValue oldValue = default, TValue newValue = default)
+        {
+            _dictionary = new Dictionary<TKey, TValue>(dictionary);
+            Type = type;
+            Key = key;
+            OldValue = oldValue;
+            NewValue = newValue;
+        }
+
+        public IReadOnlyDictionary<TKey, TValue> GetDictionary => _dictionary;
     }
 }

@@ -48,7 +48,8 @@ namespace Utilities.Observables
 
         protected void NotifyListeners(TChange change)
         {
-            _listeners.ForEach(listener => listener.Invoke(this, change));
+            foreach (var listener in _listeners.ToArray()) // ← safe copy
+                listener.Invoke(this, change);
         }
 
         public bool IsBound => _boundTo != null;

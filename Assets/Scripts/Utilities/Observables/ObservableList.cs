@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Utilities.Observables
 {
@@ -57,6 +59,8 @@ namespace Utilities.Observables
         IEnumerator IEnumerable.GetEnumerator() => Value.GetEnumerator();
         public IEnumerator<T> GetEnumerator() => Value.GetEnumerator();
         public int IndexOf(T item) => Value.IndexOf(item);
+
+        public IReadOnlyList<T> ReadOnly => Value;
 
         public void Add(T item)
         {
@@ -141,9 +145,9 @@ namespace Utilities.Observables
         {
             if (EqualityComparer<List<T>>.Default.Equals(Value, newValue)) return;
 
-            var oldValue = Value;
+            var oldValue = new List<T>(Value);
 
-            oldValue?.ForEach(ItemUnsubscribe);
+            oldValue.ForEach(ItemUnsubscribe);
             _value = newValue;
             Value.ForEach(ItemSubscribe);
 

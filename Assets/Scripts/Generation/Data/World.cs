@@ -8,7 +8,7 @@ using Utilities.Observables;
 
 namespace Generation.Data
 {
-    public sealed class World
+    public sealed class World : IDisposable
     {
         public readonly ConcurrentDictionary<Vector2Int, Chunk> Chunks = new();
 
@@ -91,6 +91,13 @@ namespace Generation.Data
             if (!chunk.TryGetEntityOfType(typeof(TerrainObject), out var terrain)) return 0;
             if (!terrain.Value.TryGetProperty("Heightmap", out Property<float[,]> heightmap)) return 0;
             return heightmap.Value[localX, localY];
+        }
+
+        public void Dispose()
+        {
+            foreach (var chunk in Chunks.Values)
+                chunk.Dispose();
+            Chunks.Clear();
         }
     }
 }

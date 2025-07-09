@@ -82,5 +82,10 @@ namespace Utilities
                 .Where(t => t != type && type.IsAssignableFrom(t) && (predicate?.Invoke(t) ?? true))
                 .ToList();
         }
+
+        public static List<T> GetRange<T>(this IReadOnlyList<T> source, int index, int count)
+        {
+            return source.Skip(index).Take(count).ToList();
+        }
     }
 }
