@@ -48,21 +48,29 @@ namespace Generation
             return false;
         }
 
-        public static void CancelAllJobsOfTypeAtPosition<TJob>(Vector2Int position) where TJob : IJob
+        public static void CancelAllJobsOfTypeAtPosition<TJob>(Vector2Int position, IEnumerable<TJob> skip = null,
+            Func<TJob, bool> predicate = null) where TJob : IJob
         {
-            foreach (var job in Instance._jobLookup.Values.Where(j => j.Position == position && j is TJob).ToList())
-                TryCancelJob(job);
+            CancelAllJobs(skip, job =>
+                job.Position == position &&
+                job is TJob typed &&
+                (predicate?.Invoke(typed) ?? true));
         }
 
-        public static void CancelAllJobsAtPosition(Vector2Int position)
+        public static void CancelAllJobsAtPosition(Vector2Int position, IEnumerable<IJob> skip = null,
+            Func<IJob, bool> predicate = null)
         {
-            foreach (var job in Instance._jobLookup.Values.Where(j => j.Position == position).ToList())
-                TryCancelJob(job);
+            CancelAllJobs(skip, job =>
+                job.Position == position &&
+                (predicate?.Invoke(job) ?? true));
         }
 
-        public static void CancelAllJobs()
+        public static void CancelAllJobs(IEnumerable<IJob> skip = null, Func<IJob, bool> predicate = null)
         {
-            foreach (var job in Instance._jobLookup.Values.ToList())
+            var skipSet = new HashSet<IJob>(skip ?? Enumerable.Empty<IJob>());
+            foreach (var job in Instance._jobLookup.Values.Where(job =>
+                         !skipSet.Contains(job) &&
+                         (predicate?.Invoke(job) ?? true)).ToList())
                 TryCancelJob(job);
         }
 
@@ -90,7 +98,7 @@ namespace Generation
             {
                 if (!job.IsRunning) continue;
 
-                job.Priority = ComputePriority(job.Position);
+                job.Activate(WorldLoader.CameraChunkPosition());
 
                 if (job.Parent != null)
                 {
@@ -138,12 +146,6 @@ namespace Generation
                 _jobLookup.TryRemove(job, out _);
                 Interlocked.Decrement(ref _runningJobs);
             }
-        }
-
-        private float ComputePriority(Vector2Int position)
-        {
-            var cameraChunk = WorldLoader.CameraChunkPosition();
-            return (position - cameraChunk).magnitude;
         }
     }
 }

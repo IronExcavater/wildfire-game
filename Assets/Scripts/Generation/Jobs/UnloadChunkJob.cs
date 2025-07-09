@@ -1,4 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Generation.Data;
+using Generation.Objects;
 using UnityEngine;
 
 namespace Generation.Jobs
@@ -9,22 +14,39 @@ namespace Generation.Jobs
         {
         }
 
+        public override float ComputePriority(Vector2Int cameraChunk) => Priority = -(Position - cameraChunk).magnitude;
+
+        public override void Activate(Vector2Int cameraChunk)
+        {
+            base.Activate(cameraChunk);
+            JobManager.CancelAllJobsOfTypeAtPosition<BuildTerrainJob>(Position);
+            JobManager.CancelAllJobsOfTypeAtPosition<LoadChunkJob>(Position);
+        }
+
         public override async Task Start()
         {
-            if (WorldLoader.TryGetInstancesAtPosition(Position, out var instances))
-            {
-                JobManager.CancelAllJobsOfTypeAtPosition<BuildTerrainJob>(Position);
-                JobManager.CancelAllJobsOfTypeAtPosition<LoadChunkJob>(Position);
+            List<(Type, DataObject<Entity>)> toRelease = new();
 
-                if (instances != null)
+            await Task.Run(() =>
+            {
+                if (WorldLoader.TryGetInstancesAtPosition(Position, out var instances) && instances != null)
                 {
                     foreach (var instance in instances)
                     {
-                        var type = instance.GetType();
-
+                        toRelease.Add((instance.GetType(), instance));
                         instance.Data.Unbind();
-                        WorldLoader.GetPool(type).Release(instance);
                     }
+                }
+            });
+
+            var grouped = toRelease.GroupBy(t => t.Item1);
+            foreach (var group in grouped)
+            {
+                var pool = WorldLoader.GetPool(group.Key);
+                foreach (var (_, instance) in group)
+                {
+                    instance.Data.Unbind();
+                    pool.Release(instance);
                 }
             }
 

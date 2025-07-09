@@ -14,6 +14,12 @@ namespace Generation.Jobs
             Lod = lod;
         }
 
+        public override void Activate(Vector2Int cameraChunk)
+        {
+            base.Activate(cameraChunk);
+            JobManager.CancelAllJobsOfTypeAtPosition(Position, new[]{this});
+        }
+
         public override async Task Start()
         {
             var instance = (TerrainObject)WorldLoader.GetInstanceOfTypeAtPosition(Position, typeof(TerrainObject));

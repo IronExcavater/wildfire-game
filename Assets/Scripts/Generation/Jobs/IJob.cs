@@ -7,10 +7,10 @@ namespace Generation.Jobs
 {
     public enum ChunkJobType
     {
+        UnloadChunk,
         GenerateChunk,
         LoadChunk,
-        BuildTerrain,
-        UnloadChunk
+        BuildTerrain
     }
 
     public abstract class IJob : IComparable<IJob>, IEquatable<IJob>
@@ -18,7 +18,7 @@ namespace Generation.Jobs
         public ChunkJobType Type { get; }
         public Vector2Int Position { get; }
         public float Priority { get; set; }
-        public bool IsRunning { get; set; } = true;
+        public bool IsRunning { get; set; }
         public IJob Parent { get; set; }
 
         public IJob(ChunkJobType type, Vector2Int position)
@@ -28,8 +28,8 @@ namespace Generation.Jobs
         }
 
         public virtual int CompareTo(IJob other) =>
-            (Priority, Position.x, Position.y, (int)Type).CompareTo(
-                (other.Priority, other.Position.x, other.Position.y, (int)other.Type));
+            ((int)Type, Priority, Position.x, Position.y).CompareTo(
+                ((int)other.Type, other.Priority, other.Position.x, other.Position.y));
 
         public bool Equals(IJob other) =>
             other != null &&
@@ -38,6 +38,14 @@ namespace Generation.Jobs
         public override bool Equals(object obj) => obj is IJob other && Equals(other);
 
         public override int GetHashCode() => HashCode.Combine(Position, (int)Type);
+
+        public virtual float ComputePriority(Vector2Int cameraChunk) => Priority = (Position - cameraChunk).magnitude;
+
+        public virtual void Activate(Vector2Int cameraChunk)
+        {
+            IsRunning = true;
+            ComputePriority(cameraChunk);
+        }
 
         public abstract Task Start();
         public abstract void Cancel();
