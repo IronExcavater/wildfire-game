@@ -18,7 +18,7 @@ namespace Generation.Jobs
         public ChunkJobType Type { get; }
         public Vector2Int Position { get; }
         public float Priority { get; set; }
-        public bool IsRunning { get; set; }
+        public bool IsRunning { get; set; } = true;
         public IJob Parent { get; set; }
 
         public IJob(ChunkJobType type, Vector2Int position)
@@ -43,7 +43,6 @@ namespace Generation.Jobs
 
         public virtual void Activate(Vector2Int cameraChunk)
         {
-            IsRunning = true;
             ComputePriority(cameraChunk);
         }
 
