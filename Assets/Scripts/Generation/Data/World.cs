@@ -95,6 +95,7 @@ namespace Generation.Data
 
         public void Dispose()
         {
+            JobManager.CancelAllJobs();
             foreach (var chunk in Chunks.Values)
                 chunk.Dispose();
             Chunks.Clear();
