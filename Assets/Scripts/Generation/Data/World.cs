@@ -67,6 +67,32 @@ namespace Generation.Data
             return Mathf.Lerp(bottomInterp, topInterp, fracY);
         }
 
+        public static float GetHeight(Vector2 worldPosition, Vector2Int chunk, float[,] heightmap)
+        {
+            var resolution = WorldGenerator.Resolution;
+            var chunkSize = WorldGenerator.ChunkSize;
+
+            var sampleX = (worldPosition.x - chunk.x * chunkSize) * resolution;
+            var sampleY = (worldPosition.y - chunk.y * chunkSize) * resolution;
+
+            var maxX = heightmap.GetLength(0) - 1;
+            var maxY = heightmap.GetLength(1) - 1;
+
+            var baseX = Mathf.Clamp(Mathf.FloorToInt(sampleX), 0, maxX - 1);
+            var baseY = Mathf.Clamp(Mathf.FloorToInt(sampleY), 0, maxY - 1);
+            var fracX = sampleX - baseX;
+            var fracY = sampleY - baseY;
+
+            var bottomLeft = heightmap[baseX, baseY];
+            var bottomRight = heightmap[baseX + 1, baseY];
+            var topLeft = heightmap[baseX, baseY + 1];
+            var topRight = heightmap[baseX + 1, baseY + 1];
+
+            var bottomInterp = Mathf.Lerp(bottomLeft, bottomRight, fracX);
+            var topInterp = Mathf.Lerp(topLeft, topRight, fracX);
+            return Mathf.Lerp(bottomInterp, topInterp, fracY);
+        }
+
         public async Task<float> GetHeight(Vector2Int worldPosition, IJob parent = null)
         {
             var mapSize = WorldGenerator.ChunkSize * WorldGenerator.Resolution;

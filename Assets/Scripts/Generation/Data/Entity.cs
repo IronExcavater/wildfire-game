@@ -8,6 +8,8 @@ namespace Generation.Data
     {
         public readonly Property<Chunk> Chunk = new();
         public readonly Property<Vector3> Position = new();
+        public readonly Property<Quaternion> Rotation = new();
+        public readonly Property<Vector3> Scale = new();
         public readonly Property<Type> Type = new();
         public readonly ObservableDictionary<string, IProperty> Properties = new();
 

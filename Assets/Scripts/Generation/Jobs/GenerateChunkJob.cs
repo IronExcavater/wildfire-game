@@ -17,7 +17,7 @@ namespace Generation.Jobs
                 var chunk = new Chunk(Position);
 
                 foreach (var pass in WorldGenerator.Passes)
-                    pass.Apply(WorldGenerator.World, chunk);
+                    pass.Apply(chunk);
 
                 CompleteSource.TrySetResult(chunk);
             }, CancelSource.Token);

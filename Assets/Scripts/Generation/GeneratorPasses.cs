@@ -12,6 +12,7 @@ namespace Generation
     [CreateAssetMenu(fileName = "GeneratorPasses", menuName = "Generation/Generator Passes")]
     public class GeneratorPasses : ScriptableObject
     {
+        [SerializeField] public string seed;
         [SerializeReference, PolymorphicField] public List<GeneratorPass> passes = new();
 
         #if UNITY_EDITOR
@@ -19,14 +20,45 @@ namespace Generation
         private static float _lastChangedTime;
         private static bool _waiting;
 
+        private static readonly (int Min, int Max) SeedLengthClamp = (10, 15);
+        private string _lastSeed;
+
         private void OnValidate()
         {
-            if (!Application.isPlaying) return;
+            if (string.IsNullOrWhiteSpace(seed))
+            {
+                RandomizeSeed();
+                Debug.LogWarning("Seed was empty. Generated random seed.");
+            }
+            else if (!IsSeedValid(seed))
+            {
+                seed = _lastSeed;
+                if (!IsSeedValid(seed)) _lastSeed = RandomizeSeed();
+                Debug.LogWarning($"Seed must be between {SeedLengthClamp.Min} and {SeedLengthClamp.Max} characters.");
+            }
+            else
+                _lastSeed = seed;
 
-            _lastChangedTime = (float)EditorApplication.timeSinceStartup;
-            if (_waiting) return;
-            _waiting = true;
-            EditorApplication.update += DebouncedClear;
+            if (Application.isPlaying)
+            {
+                _lastChangedTime = (float)EditorApplication.timeSinceStartup;
+                if (_waiting) return;
+                _waiting = true;
+                EditorApplication.update += DebouncedClear;
+            }
+        }
+
+        private bool IsSeedValid(string seed)
+        {
+            return seed.Length > SeedLengthClamp.Min && seed.Length < SeedLengthClamp.Max;
+        }
+
+        public string RandomizeSeed()
+        {
+            seed = System.Guid.NewGuid().ToString("N")
+                .Substring(0, Random.Range(SeedLengthClamp.Min, SeedLengthClamp.Max));
+            if (Application.isPlaying) WorldGenerator.SeedString = seed;
+            return seed;
         }
 
         private void DebouncedClear()

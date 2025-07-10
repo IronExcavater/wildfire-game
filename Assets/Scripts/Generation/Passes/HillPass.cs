@@ -13,12 +13,12 @@ namespace Generation.Passes
         [Range(0.01f, 10)] public float lacunarity = 2f;
         [Range(0.01f, 1)] public float persistence = 0.5f;
 
-        public override void Apply(World world, Chunk chunk)
+        public override void Apply(Chunk chunk)
         {
             var chunkSize = WorldGenerator.ChunkSize;
             var size = chunkSize * WorldGenerator.Resolution;
             var heightmap = chunk.GetHeightmap();
-            var arbitraryOffset = 100000; // Temporary solution to resolve noise seams with negative numbers
+            var arbitraryOffset = GetNoiseOffset();
 
             for (var y = 0; y <= size; y++)
             for (var x = 0; x <= size; x++)

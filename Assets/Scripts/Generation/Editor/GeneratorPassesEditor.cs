@@ -11,10 +11,14 @@ namespace Generation.Editor
         {
             base.OnInspectorGUI();
 
+            var obj = target as GeneratorPasses;
+
+            if (obj != null && GUILayout.Button("Randomise Seed"))
+                obj.RandomizeSeed();
+
             EditorGUILayout.Space();
 
-            if (!Application.isPlaying) return;
-            if (GUILayout.Button("Regenerate World"))
+            if (Application.isPlaying && GUILayout.Button("Regenerate World"))
                 WorldGenerator.Regenerate();
         }
     }

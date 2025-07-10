@@ -27,11 +27,7 @@ namespace Generation.Objects
         }
 
         private MeshFilter _meshFilter;
-        private MeshRenderer _meshRenderer;
-        private MeshCollider _meshCollider;
 
-        private readonly Property<Chunk> _chunk = new();
-        private readonly Property<Vector3> _position = new();
         private readonly Property<float[,]> _heightmap = new();
 
         private const float SkirtDepth = 1;
@@ -41,10 +37,7 @@ namespace Generation.Objects
         {
             base.Awake();
             _meshFilter = GetComponent<MeshFilter>();
-            _meshRenderer = GetComponent<MeshRenderer>();
-            _meshCollider = GetComponent<MeshCollider>();
 
-            _position.AddListener((_, change) => transform.position = change.NewValue);
             _heightmap.AddListener((_, _) =>
             {
                 _meshes.Clear();
@@ -60,8 +53,7 @@ namespace Generation.Objects
 
         protected override void OnDataChanged(PropertyBase<Entity, Entity, ValueChange<Entity>> property, ValueChange<Entity> change)
         {
-            _chunk.BindBidirectional(change.NewValue.Chunk);
-            _position.BindBidirectional(change.NewValue.Position);
+            base.OnDataChanged(property, change);
             Lod = GetLod();
 
             if (change.NewValue.TryGetProperty("Heightmap", out Property<float[,]> heightmap))

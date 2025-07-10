@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 394e06cebe2c4caf8e6e4aa12cd8a1f2, type: 3}
   m_Name: GeneratorPasses
   m_EditorClassIdentifier: 
+  seed: 65008cd1302d4
   passes:
   - rid: 1915427534221344837
+  - rid: 1915427559924826246
   references:
     version: 2
     RefIds:
@@ -25,3 +27,21 @@ MonoBehaviour:
         octaves: 8
         lacunarity: 2
         persistence: 0.5
+    - rid: 1915427559924826246
+      type: {class: ForestPass, ns: Generation.Passes, asm: Assembly-CSharp}
+      data:
+        forestFrequency: 0.01
+        spawnChance:
+          min: 0.2
+          max: 0.9
+        plainsFrequency: 0.03
+        plainsThreshold: 0.7
+        elevationFactor:
+          min: 10
+          max: 20
+        valleyBoost: 0.5
+        treeSpacing: 2
+        treeJitter: 0.8
+        treeScale:
+          min: 0.8
+          max: 1.2

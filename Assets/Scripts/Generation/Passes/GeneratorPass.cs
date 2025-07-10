@@ -6,6 +6,8 @@ namespace Generation.Passes
     [Serializable]
     public abstract class GeneratorPass
     {
-        public abstract void Apply(World world, Chunk chunk);
+        protected int GetNoiseOffset() => WorldGenerator.HashSeed(WorldGenerator.SeedString + GetType().FullName);
+
+        public abstract void Apply(Chunk chunk);
     }
 }

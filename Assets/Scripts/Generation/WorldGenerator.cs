@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Generation.Data;
 using Generation.Jobs;
@@ -19,6 +20,9 @@ namespace Generation
         [SerializeField, Range(1, 8)] private int _maxLodLevel = 4;
         public static int MaxLodLevel => Instance._maxLodLevel;
 
+        public static string SeedString { get; set; }
+        public static int SeedInt => HashSeed(SeedString);
+
         private World _world = new();
         public static World World => Instance._world;
 
@@ -32,7 +36,8 @@ namespace Generation
         protected override void Awake()
         {
             base.Awake();
-            if (_generatorPasses) _passes.AddRange(_generatorPasses.passes);
+            if (_generatorPasses != null) _passes.AddRange(_generatorPasses.passes);
+            SeedString = _generatorPasses?.seed ?? "default";
         }
 
         public static async Task<Chunk> GetChunk(Vector2Int position, IJob parent = null)
@@ -45,6 +50,16 @@ namespace Generation
             }
 
             return chunk;
+        }
+
+        public static int HashSeed(string seed)
+        {
+            unchecked
+            {
+                var hash = 23;
+                foreach (var c in seed) hash = hash * 31 + c;
+                return Math.Clamp(hash, 100_000, 2_000_000_000);
+            }
         }
 
         public static void Regenerate()

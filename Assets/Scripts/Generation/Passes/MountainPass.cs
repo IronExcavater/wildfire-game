@@ -11,14 +11,12 @@ namespace Generation.Passes
         [Range(0.001f, 0.05f)] public float frequency = 0.005f;
         [Range(1, 4)] public float sharpness = 2f;
 
-        public override void Apply(World world, Chunk chunk)
+        public override void Apply(Chunk chunk)
         {
             var chunkSize = WorldGenerator.ChunkSize;
             var size = chunkSize * WorldGenerator.Resolution;
-
             var heightmap = chunk.GetHeightmap();
-
-            var arbitraryOffset = 200000; // Temporary solution to resolve noise seams with negative numbers
+            var arbitraryOffset = GetNoiseOffset();
 
             for (var y = 0; y <= size; y++)
             for (var x = 0; x <= size; x++)

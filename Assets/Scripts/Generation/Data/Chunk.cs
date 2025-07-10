@@ -10,6 +10,7 @@ namespace Generation.Data
     public sealed class Chunk : IDisposable, IObservable<Chunk, ValueChange<Chunk>>
     {
         public Vector2Int Position;
+        public Vector3 WorldPosition => new(Position.x * WorldGenerator.ChunkSize, 0, Position.y * WorldGenerator.ChunkSize);
         public readonly ObservableList<Property<Entity>> Entities = new();
 
         public event Action<ValueChange<Chunk>> OnChanged;
@@ -65,14 +66,15 @@ namespace Generation.Data
             if (!TryGetEntityOfType(typeof(TerrainObject), out var terrain))
             {
                 terrain = new Property<Entity>(new Entity(typeof(TerrainObject), this));
-                terrain.Value.Position.Value = new Vector3(Position.x * chunkSize, 0, Position.y * chunkSize);
+                terrain.Value.Position.Value = WorldPosition;
                 AddEntity(terrain);
             }
 
+            var dim = size + 1;
             if (!terrain.Value.TryGetProperty("Heightmap", out Property<float[,]> heightmap) ||
-                heightmap.Value.Length != (int)Math.Pow(size + 1, 2) || heightmap.Value.Rank != 2)
+                heightmap.Value.Length != dim * dim || heightmap.Value.Rank != 2)
             {
-                heightmap = new Property<float[,]>(new float[size + 1, size + 1]);
+                heightmap = new Property<float[,]>(new float[dim, dim]);
                 terrain.Value.SetProperty("Heightmap", heightmap);
             }
 

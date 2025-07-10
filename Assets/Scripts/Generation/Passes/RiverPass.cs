@@ -11,12 +11,12 @@ namespace Generation.Passes
         [Range(0, 10f)] public float depth = 5f;
         [Range(0.01f, 1f)] public float width = 0.1f;
 
-        public override void Apply(World world, Chunk chunk)
+        public override void Apply(Chunk chunk)
         {
             var chunkSize = WorldGenerator.ChunkSize;
             var size = chunkSize * WorldGenerator.Resolution;
             var heightmap = chunk.GetHeightmap();
-            var offset = 400000;
+            var offset = GetNoiseOffset();
 
             for (var y = 0; y <= size; y++)
             for (var x = 0; x <= size; x++)
