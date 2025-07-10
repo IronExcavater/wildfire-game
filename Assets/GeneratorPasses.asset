@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   passes:
   - rid: 1915427534221344837
+  - rid: 2965629376238452794
   - rid: 1915427534221344866
   references:
     version: 2
@@ -32,3 +33,9 @@ MonoBehaviour:
         weight: 1
         frequency: 0.015
         sharpness: 4
+    - rid: 2965629376238452794
+      type: {class: RiverPass, ns: Generation.Passes, asm: Assembly-CSharp}
+      data:
+        frequency: 0.005
+        depth: 2
+        width: 0.1

@@ -1,8 +1,6 @@
 ﻿using System;
 using Generation.Data;
-using Generation.Objects;
 using UnityEngine;
-using Utilities.Observables;
 
 namespace Generation.Passes
 {
@@ -19,9 +17,7 @@ namespace Generation.Passes
         {
             var chunkSize = WorldGenerator.ChunkSize;
             var size = chunkSize * WorldGenerator.Resolution;
-
             var heightmap = chunk.GetHeightmap();
-
             var arbitraryOffset = 100000; // Temporary solution to resolve noise seams with negative numbers
 
             for (var y = 0; y <= size; y++)
