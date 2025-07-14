@@ -269,21 +269,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f9fe2bf62d9c9746b1ca2a90aec1a51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  settings:
+    invertPan: 0
+    invertRotate: 0
+    invertZoom: 0
+    panSpeed: 1
+    rotateSpeed: 10
+    zoomSpeed: 60
   autoZoom: 100
   autoTilt: 45
-  autoYaw: 0
-  autoSpeed: 2
-  panSpeed: 1
-  rotateSpeed: 10
-  zoomSpeed: 20
+  manualTimeout: 5
   minZoom: 20
-  maxZoom: 200
   minTilt: 20
   maxTilt: 80
-  manualTimeout: 5
+  targetSmoothing: 2
+  cameraSmoothing: 80
   targetBounds:
     m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 10, y: 0, z: 10}
+    m_Extent: {x: 100, y: 0, z: 100}
   panAction: {fileID: -5993553971008828408, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   rotateAction: {fileID: 5076046646073721095, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   zoomAction: {fileID: 6937667376808239156, guid: 052faaac586de48259a63d0c4782560b, type: 3}
