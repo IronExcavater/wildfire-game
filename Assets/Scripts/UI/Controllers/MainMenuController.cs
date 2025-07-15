@@ -1,17 +1,14 @@
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace UI.Controllers
 {
     public class MainMenuController : UIMenu
     {
-        public MainMenuController()
+        public MainMenuController() : base("UI/Views/MainMenu")
         {
-            _root = Resources.Load<VisualTreeAsset>("UI/Views/MainMenu");
-            Root = _root.CloneTree();
-
+            Root.Q<Button>("settings-button").clicked += OpenSettings;
         }
 
-        private void OpenSettings() => UIManager.
+        private void OpenSettings() => UIManager.PushMenu(new SettingsMenuController());
     }
 }

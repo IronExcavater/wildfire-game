@@ -5,5 +5,10 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
 >
-    
+    <ui:VisualElement class="root">
+        <ui:Button name="start-button">Start</ui:Button>
+        <ui:Button name="settings-button">Settings</ui:Button>
+        <ui:Button name="credits-button">Credits</ui:Button>
+        <ui:Button name="quit-button">Quit</ui:Button>
+    </ui:VisualElement>
 </ui:UXML>

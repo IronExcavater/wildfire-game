@@ -1,4 +1,5 @@
-﻿using UnityEngine.UIElements;
+﻿using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace UI
 {
@@ -6,5 +7,11 @@ namespace UI
     {
         protected VisualTreeAsset _root;
         public VisualElement Root;
+
+        protected UIMenu(string uxmlPath)
+        {
+            _root = Resources.Load<VisualTreeAsset>(uxmlPath);
+            Root = _root.CloneTree();
+        }
     }
 }

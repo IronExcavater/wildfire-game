@@ -5,5 +5,12 @@
     xmlns:uie="UnityEditor.UIElements"
     xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
 >
-    
+    <ui:VisualElement class="root">
+        <ui:Label text="Settings" style="unity-font-size: 24px; margin-bottom: 20px;" />
+        <ui:Label text="Volume" />
+        <ui:SliderInt name="volume-slider" low-value="0" high-value="100" class="slider" />
+        <ui:Label name="volume-value-label">50</ui:Label>
+        <ui:Toggle name="invert-toggle">Invert Controls</ui:Toggle>
+        <ui:Button name="back-button">Back</ui:Button>
+    </ui:VisualElement>
 </ui:UXML>
