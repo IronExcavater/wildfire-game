@@ -1,55 +1,10 @@
-﻿using System;
-using DG.Tweening;
-using UnityEngine;
+﻿using UnityEngine.UIElements;
 
 namespace UI
 {
-    public enum ParentBehaviour
+    public abstract class UIMenu
     {
-        Show,
-        Hide
-    }
-
-    public class UIMenu : MonoBehaviour
-    {
-        private bool _enabled;
-        public bool Enabled
-        {
-            get => _enabled;
-            set
-            {
-                _enabled = value;
-                _canvasGroup.blocksRaycasts = value;
-                _canvasGroup.interactable = value;
-                MenuTransition(value);
-            }
-        }
-
-        public RectTransform submenuRect;
-        private CanvasGroup _canvasGroup;
-
-        public event Action OnOpen;
-        public event Action OnClose;
-
-        private void Awake()
-        {
-            _canvasGroup = GetComponent<CanvasGroup>();
-        }
-
-        public void Open()
-        {
-            Enabled = true;
-            OnOpen?.Invoke();
-        }
-        public void Close()
-        {
-            Enabled = false;
-            OnClose?.Invoke();
-        }
-
-        protected virtual void MenuTransition(bool enabled)
-        {
-            _canvasGroup.DOFade(enabled ? 1 : 0, 0.4f).SetEase(Ease.OutCubic);
-        }
+        protected VisualTreeAsset _root;
+        public VisualElement Root;
     }
 }
