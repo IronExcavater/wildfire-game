@@ -1,54 +1,55 @@
 ﻿using System;
-using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace UI
 {
-    public abstract class UIMenu : MonoBehaviour
+    public enum ParentBehaviour
     {
-        public UIMenu parentMenu;
-        public List<UIMenu> childMenus;
+        Show,
+        Hide
+    }
 
-        public CanvasGroup canvasGroup;
-        public Button backButton;
+    public class UIMenu : MonoBehaviour
+    {
+        private bool _enabled;
+        public bool Enabled
+        {
+            get => _enabled;
+            set
+            {
+                _enabled = value;
+                _canvasGroup.blocksRaycasts = value;
+                _canvasGroup.interactable = value;
+                MenuTransition(value);
+            }
+        }
+
+        public RectTransform submenuRect;
+        private CanvasGroup _canvasGroup;
 
         public event Action OnOpen;
         public event Action OnClose;
 
         private void Awake()
         {
-            backButton?.onClick.AddListener(Close);
+            _canvasGroup = GetComponent<CanvasGroup>();
         }
 
-        private void OnEnable()
+        public void Open()
         {
-            OnOpen += OpenTransition;
-            OnClose += CloseTransition;
+            Enabled = true;
+            OnOpen?.Invoke();
+        }
+        public void Close()
+        {
+            Enabled = false;
+            OnClose?.Invoke();
         }
 
-        private void OnDisable()
+        protected virtual void MenuTransition(bool enabled)
         {
-            OnOpen -= OpenTransition;
-            OnClose -= CloseTransition;
-        }
-
-        public void Open() => OnOpen?.Invoke();
-        public void Close() => OnClose?.Invoke();
-
-        protected virtual void OpenTransition()
-        {
-            canvasGroup.blocksRaycasts = true;
-            canvasGroup.interactable = true;
-            canvasGroup.DOFade(1, 0.4f).SetEase(Ease.OutCubic);
-        }
-
-        protected virtual void CloseTransition()
-        {
-            canvasGroup.blocksRaycasts = false;
-            canvasGroup.interactable = false;
-            canvasGroup.DOFade(0, 0.4f).SetEase(Ease.OutCubic);
+            _canvasGroup.DOFade(enabled ? 1 : 0, 0.4f).SetEase(Ease.OutCubic);
         }
     }
 }
