@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5338570343024a66974196682f325d6f, type: 3}
+  m_Name: GeneratorPools
+  m_EditorClassIdentifier: 
+  pools:
+    entries:
+    - Key: Generation.Objects.TerrainObject
+      Value:
+      - {fileID: 1802042699889495583, guid: 023580a9016a3904684e322572fef404, type: 3}
+    - Key: Generation.Objects.TreeObject
+      Value:
+      - {fileID: 5824784502496040224, guid: 63b30821fe30e614ebcb5e1b1de27b17, type: 3}
+      - {fileID: 264377282039467421, guid: a1a7fa9317d5fb14681106a819d7ba65, type: 3}
+      - {fileID: 2414935957932619929, guid: 8c9ae583969119f4aaa03b608686e01c, type: 3}
+      - {fileID: 2735790303609298878, guid: ccca61d03755750468396c9555485464, type: 3}
+      - {fileID: 1892503390068243435, guid: b87c3917f5edb754aa16ad7920fee466, type: 3}
+      - {fileID: 9103212171049441755, guid: 799f21c906fd95c49981dc3c609d16d6, type: 3}
+      - {fileID: 1390885176819459333, guid: 602e332fb03c4ef49ad3e9c8592019a0, type: 3}
