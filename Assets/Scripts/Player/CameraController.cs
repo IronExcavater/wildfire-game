@@ -1,19 +1,33 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Utilities.Observables;
 
 namespace Player
 {
     [Serializable]
-    public class CameraSettings
+    public class CameraSettings : IObservable<CameraSettings, ValueChange<CameraSettings>>
     {
-        public bool invertPan;
-        public bool invertRotate;
-        public bool invertZoom;
+        public Property<bool> InvertPan = new();
+        public Property<bool> InvertRotate = new();
+        public Property<bool> InvertZoom = new();
 
-        public float panSpeed = 1f;
-        public float rotateSpeed = 10f;
-        public float zoomSpeed = 60f;
+        public Property<float> PanSpeed = new(1f);
+        public Property<float> RotateSpeed = new(10f);
+        public Property<float> ZoomSpeed = new(60f);
+
+        public event Action<ValueChange<CameraSettings>> OnChanged;
+        public void InvokeOnChanged() => OnChanged?.Invoke(new ValueChange<CameraSettings>(this, this));
+
+        public CameraSettings()
+        {
+            InvertPan.AddListener((_, _) => InvokeOnChanged());
+            InvertRotate.AddListener((_, _) => InvokeOnChanged());
+            InvertZoom.AddListener((_, _) => InvokeOnChanged());
+            PanSpeed.AddListener((_, _) => InvokeOnChanged());
+            RotateSpeed.AddListener((_, _) => InvokeOnChanged());
+            ZoomSpeed.AddListener((_, _) => InvokeOnChanged());
+        }
     }
 
     [RequireComponent(typeof(Camera))]
@@ -119,9 +133,9 @@ namespace Player
 
         private void HandleInput()
         {
-            var panInput = panAction.action.ReadValue<Vector2>() * (settings.invertPan ? -1 : 1);
-            var rotateInput = rotateAction.action.ReadValue<Vector2>() * (settings.invertRotate ? -1 : 1);
-            var zoomInput = zoomAction.action.ReadValue<float>() * (settings.invertZoom ? -1 : 1);
+            var panInput = panAction.action.ReadValue<Vector2>() * (settings.InvertPan.Value ? -1 : 1);
+            var rotateInput = rotateAction.action.ReadValue<Vector2>() * (settings.InvertRotate.Value ? -1 : 1);
+            var zoomInput = zoomAction.action.ReadValue<float>() * (settings.InvertZoom.Value ? -1 : 1);
 
             if (panInput != Vector2.zero || rotateInput != Vector2.zero || zoomInput != 0f)
             {
@@ -130,13 +144,13 @@ namespace Player
                 var right = Quaternion.Euler(0, _targetYaw, 0) * Vector3.right;
                 var forward = Quaternion.Euler(0, _targetYaw, 0) * Vector3.forward;
 
-                _targetPosition += settings.panSpeed * (_targetZoom / 100) * (right * panInput.x + forward * panInput.y);
+                _targetPosition += settings.PanSpeed.Value * (_targetZoom / 100) * (right * panInput.x + forward * panInput.y);
                 _targetPosition = ClampPosition(_targetPosition);
 
-                _targetYaw += rotateInput.x * settings.rotateSpeed * Time.deltaTime;
-                _targetTilt = Mathf.Clamp(_targetTilt - rotateInput.y * settings.rotateSpeed * Time.deltaTime, minTilt, maxTilt);
+                _targetYaw += rotateInput.x * settings.RotateSpeed.Value * Time.deltaTime;
+                _targetTilt = Mathf.Clamp(_targetTilt - rotateInput.y * settings.RotateSpeed.Value * Time.deltaTime, minTilt, maxTilt);
 
-                _targetZoom = ClampZoom(_targetZoom - zoomInput * settings.zoomSpeed * Time.deltaTime);
+                _targetZoom = ClampZoom(_targetZoom - zoomInput * settings.ZoomSpeed.Value * Time.deltaTime);
             }
         }
 

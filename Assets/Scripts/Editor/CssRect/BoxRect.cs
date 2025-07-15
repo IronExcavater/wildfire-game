@@ -35,6 +35,7 @@ namespace Editor.CssRect
         public readonly Property<BoxVec2> Offset = new();
 
         public event Action<ValueChange<BoxRect>> OnChanged;
+        public void InvokeOnChanged() => OnChanged?.Invoke(new ValueChange<BoxRect>(this, this));
 
         public BoxRect(Vector2 position, Vector2 minSize, SerializedProperty property = null)
         {
@@ -151,11 +152,6 @@ namespace Editor.CssRect
 
             RectPosition.AddListener(UpdateRectListener);
             RectSize.AddListener(UpdateRectListener);
-        }
-
-        private void InvokeOnChanged()
-        {
-            OnChanged?.Invoke(new ValueChange<BoxRect>(this, this));
         }
 
         private void UpdateContainerFromParentListener(PropertyBase<Vector2, Vector2, ValueChange<Vector2>> property,

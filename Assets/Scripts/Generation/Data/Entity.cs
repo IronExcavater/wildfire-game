@@ -14,6 +14,7 @@ namespace Generation.Data
         public readonly ObservableDictionary<string, IProperty> Properties = new();
 
         public event Action<ValueChange<Entity>> OnChanged;
+        public void InvokeOnChanged() => OnChanged?.Invoke(new ValueChange<Entity>(this, this));
 
         public Entity(Type type, Chunk chunk, Vector3 position = default)
         {
@@ -37,11 +38,6 @@ namespace Generation.Data
             Position.AddListener((_, _) => InvokeOnChanged());
             Type.AddListener((_, _) => InvokeOnChanged());
             Properties.AddListener((_, _) => InvokeOnChanged());
-        }
-
-        private void InvokeOnChanged()
-        {
-            OnChanged?.Invoke(new ValueChange<Entity>(this, this));
         }
 
         public void SetProperty<T>(string key, Property<T> property)

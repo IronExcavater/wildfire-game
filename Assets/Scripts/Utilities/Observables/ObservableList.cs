@@ -11,6 +11,8 @@ namespace Utilities.Observables
         public ObservableList(bool observeInnerValue = true)
             : base(new(), observeInnerValue) { }
 
+        public ObservableList() { }
+
         protected void ItemSubscribe(T item)
         {
             if (item is IObservable<T, ValueChange<T>> observable) observable.OnChanged += ItemChanged;

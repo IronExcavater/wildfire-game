@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Utilities.Observables
 {
@@ -18,14 +19,19 @@ namespace Utilities.Observables
 
         protected PropertyBase(TValue initialValue = default, bool observeInnerValue = true)
         {
-            _value = initialValue;
+            var type = typeof(TValue);
+            if (initialValue == null && type.IsClass && type.GetConstructor(Type.EmptyTypes) != null)
+                _value = (TValue)Activator.CreateInstance(type);
+            else
+                _value = initialValue;
+
             ObserveInnerValue = observeInnerValue;
         }
 
         public TValue Value
         {
             get => GetValue();
-            set => SetValue(value);
+            set => ApplyFromValue(value);
         }
 
         public TValue GetValue()
@@ -34,6 +40,49 @@ namespace Utilities.Observables
         }
 
         public abstract void SetValue(TValue newValue);
+
+        public void ApplyFrom(PropertyBase<T, TValue, TChange> other)
+        {
+            var otherValue = other.GetType().GetProperty("Value")?.GetValue(other);
+            ApplyFromValue((TValue)otherValue);
+        }
+
+        public void ApplyFromValue(TValue newValue)
+        {
+            var valueType = typeof(TValue);
+
+            var setValueMethod = valueType.GetMethod("SetValue");
+            if (setValueMethod != null)
+            {
+                setValueMethod.Invoke(Value, new object[] { newValue });
+                return;
+            }
+
+            if (valueType.IsPrimitive || valueType == typeof(string))
+            {
+                SetValue(newValue);
+                return;
+            }
+
+            foreach (var field in valueType.GetFields(BindingFlags.Instance | BindingFlags.Public |
+                                                      BindingFlags.NonPublic))
+            {
+                var currentField = field.GetValue(Value);
+                var incomingField = field.GetValue(newValue);
+                var fieldType = field.FieldType;
+                if (incomingField == null) continue;
+
+                if (typeof(IProperty).IsAssignableFrom(fieldType))
+                {
+                    var applyFromMethod = fieldType.GetMethod(nameof(ApplyFrom));
+                    applyFromMethod?.Invoke(currentField, new[] { incomingField });
+                }
+                else if (fieldType.IsPrimitive || fieldType == typeof(string))
+                {
+                    field.SetValue(Value, incomingField);
+                }
+            }
+        }
 
         public void AddListener(Action<PropertyBase<T, TValue, TChange>, TChange> listener)
         {

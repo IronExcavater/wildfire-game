@@ -12,6 +12,8 @@ namespace Utilities.Observables
         public ObservableDictionary(bool observeInnerValue = true)
             : base(new(), observeInnerValue) { }
 
+        public ObservableDictionary() { }
+
         protected void ItemSubscribe(TValue item)
         {
             if (item is IObservable<TValue, ValueChange<TValue>> observable) observable.OnChanged += ItemChanged;

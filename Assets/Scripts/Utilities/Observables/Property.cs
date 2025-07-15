@@ -7,6 +7,8 @@ namespace Utilities.Observables
         public Property(T initialValue = default, bool observeInnerValue = true)
             : base(initialValue, observeInnerValue) { }
 
+        public Property() { }
+
         public override void SetValue(T newValue)
         {
             if (EqualityComparer<T>.Default.Equals(Value, newValue)) return;
