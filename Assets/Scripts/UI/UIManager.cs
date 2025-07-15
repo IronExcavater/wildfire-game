@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UI.Controllers;
 using UnityEngine.UIElements;
 using Utilities;
 
@@ -13,6 +14,7 @@ namespace UI
         {
             base.Awake();
             _root = GetComponent<UIDocument>().rootVisualElement;
+            PushMenu(new MainMenuController());
         }
 
         public static void PushMenu(UIMenu menu)
