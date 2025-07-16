@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace UI
@@ -9,6 +10,7 @@ namespace UI
         Hide
     }
 
+    [Serializable]
     public class UIMenu
     {
         private VisualTreeAsset _asset;

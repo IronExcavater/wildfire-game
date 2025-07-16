@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace Utilities.Observables
 {
@@ -119,13 +116,33 @@ namespace Utilities.Observables
         {
             if (EqualityComparer<Dictionary<TKey, TValue>>.Default.Equals(Value, newValue)) return;
 
-            foreach (var value in Value.Values)
-                ItemUnsubscribe(value);
+            var oldKeys = new HashSet<TKey>(Value.Keys);
 
-            _value = newValue;
+            foreach (var key in oldKeys)
+            {
+                if (newValue.ContainsKey(key)) continue;
 
-            foreach (var value in Value.Values)
-                ItemSubscribe(value);
+                ItemUnsubscribe(Value[key]);
+                Value.Remove(key);
+            }
+
+            foreach (var kvp in newValue)
+            {
+                if (Value.TryGetValue(kvp.Key, out var oldValue))
+                {
+                    ApplyFrom(oldValue, kvp.Value, () =>
+                    {
+                        ItemUnsubscribe(oldValue);
+                        Value[kvp.Key] = kvp.Value;
+                        ItemSubscribe(kvp.Value);
+                    });
+                }
+                else
+                {
+                    Value.Add(kvp.Key, kvp.Value);
+                    ItemSubscribe(kvp.Value);
+                }
+            }
 
             NotifyListeners(new DictionaryChange<TKey, TValue>(Value, DictionaryChangeType.Set));
         }

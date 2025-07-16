@@ -15,9 +15,12 @@ namespace Utilities.Observables
 
             var oldValue = Value;
 
-            ValueUnsubscribe();
-            _value = newValue;
-            ValueSubscribe();
+            ApplyFrom(oldValue, newValue, () =>
+            {
+                ValueUnsubscribe();
+                _value = newValue;
+                ValueSubscribe();
+            });
 
             NotifyListeners(new ValueChange<T>(oldValue, newValue));
         }

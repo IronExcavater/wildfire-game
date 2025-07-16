@@ -31,7 +31,7 @@ namespace Utilities.Observables
         public TValue Value
         {
             get => GetValue();
-            set => ApplyFromValue(value);
+            set => SetValue(value);
         }
 
         public TValue GetValue()
@@ -83,6 +83,31 @@ namespace Utilities.Observables
                     field.SetValue(Value, incomingField);
                 }
             }
+        }
+
+        public void ApplyFrom(T oldValue, T newValue, Action fallbackHandler)
+        {
+            var valueProp = typeof(T).GetProperty("Value");
+            if (valueProp != null && oldValue != null && newValue != null)
+            {
+                valueProp.SetValue(oldValue, valueProp.GetValue(newValue));
+            }
+            else if (!typeof(T).IsPrimitive && !typeof(T).IsValueType && typeof(T) != typeof(string) && oldValue != null && newValue != null)
+            {
+                foreach (var field in typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public |
+                                                          BindingFlags.NonPublic))
+                {
+                    var fieldValueProp = field.FieldType.GetProperty("Value");
+                    var newField = field.GetValue(newValue);
+                    var oldField = field.GetValue(oldValue);
+
+                    if (fieldValueProp != null && newField != null && oldField != null)
+                        fieldValueProp.SetValue(oldField, fieldValueProp.GetValue(newField));
+                    else
+                        field.SetValue(oldValue, newField);
+                }
+            }
+            else fallbackHandler.Invoke();
         }
 
         public void AddListener(Action<PropertyBase<T, TValue, TChange>, TChange> listener)

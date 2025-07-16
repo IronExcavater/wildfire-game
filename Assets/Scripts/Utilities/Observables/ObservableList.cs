@@ -153,22 +153,33 @@ namespace Utilities.Observables
             _value = newValue;
             Value.ForEach(ItemSubscribe);
 
-            var oldCount = oldValue?.Count ?? 0;
-            var replaceTo = Math.Min(oldCount, newValue.Count);
+            var oldCount = oldValue.Count;
+            var newCount = newValue.Count;
+            var replaceTo = Math.Min(oldCount, newCount);
+
             if (replaceTo > 0)
                 NotifyListeners(new ListChange<T>(
                     Value, ListChangeType.Replace,
                     0, replaceTo,
-                    Value.GetRange(0, replaceTo + 1)
+                    Value.GetRange(0, replaceTo)
                 ));
 
-            var maxTo = Math.Max(oldCount, newValue.Count);
-            var isRemove = replaceTo < oldCount;
-            NotifyListeners(new ListChange<T>(
-                Value, isRemove ? ListChangeType.Remove : ListChangeType.Add,
-                replaceTo, maxTo,
-                Value.GetRange(replaceTo, isRemove ? maxTo - replaceTo + 1 : 0)
-            ));
+            if (newCount > oldCount)
+            {
+                NotifyListeners(new ListChange<T>(
+                    Value, ListChangeType.Add,
+                    replaceTo, newCount,
+                    Value.GetRange(replaceTo, newCount - replaceTo)
+                ));
+            }
+            else if (oldCount > newCount)
+            {
+                NotifyListeners(new ListChange<T>(
+                    Value, ListChangeType.Remove,
+                    replaceTo, oldCount,
+                    oldValue.GetRange(replaceTo, oldCount - replaceTo)
+                ));
+            }
         }
 
         protected override void BindChanged(PropertyBase<T, List<T>, ListChange<T>> other, ListChange<T> change)
