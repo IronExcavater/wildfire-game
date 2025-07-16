@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ui:UXML
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:ui="UnityEngine.UIElements"
-    xmlns:uie="UnityEditor.UIElements"
-    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
->
-    <ui:VisualElement class="root">
-        <ui:Label text="Settings" style="unity-font-size: 24px; margin-bottom: 20px;" />
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns="UnityEngine.UIElements">
+    <ui:Style src="UI/Styles/Base.uss" />
+    <ui:VisualElement name="menu-container">
+        <ui:Label text="Settings" />
         <ui:Label text="Volume" />
-        <ui:SliderInt name="volume-slider" low-value="0" high-value="100" class="slider" />
-        <ui:Label name="volume-value-label">50</ui:Label>
-        <ui:Toggle name="invert-toggle">Invert Controls</ui:Toggle>
-        <ui:Button name="back-button">Back</ui:Button>
+        <ui:SliderInt class="slider" name="volume-slider" low-value="0" high-value="100" />
+        <ui:Label name="volume-value-label" text="50" />
+        <ui:Toggle name="invert-toggle" text="Invert Controls" />
+        <ui:Button name="back-button" text="Back" />
     </ui:VisualElement>
 </ui:UXML>

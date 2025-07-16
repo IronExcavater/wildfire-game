@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ui:UXML
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:ui="UnityEngine.UIElements"
-    xmlns:uie="UnityEditor.UIElements"
-    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
->
-    
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns="UnityEngine.UIElements">
+    <ui:Style src="UI/Styles/Base.uss" />
+    <ui:VisualElement name="menu-container">
+        <ui:Label class="title" text="Paused" />
+        <ui:Button name="resume-button" text="Resume" />
+        <ui:Button name="settings-button" text="Settings" />
+        <ui:Button name="credits-button" text="Credits" />
+        <ui:Button name="quit-button" text="Quit" />
+    </ui:VisualElement>
+    <ui:VisualElement name="submenu-container" />
 </ui:UXML>
