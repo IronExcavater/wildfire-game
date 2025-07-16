@@ -5,7 +5,8 @@ using Utilities;
 
 namespace UI
 {
-    public class UIManager : Singleton<UIManager>
+    [RequireComponent(typeof(UIDocument))]
+    public class MenuManager : Singleton<MenuManager>
     {
         private VisualElement _root;
         [SerializeField] private UIMenu _rootMenu;

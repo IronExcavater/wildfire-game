@@ -7,7 +7,7 @@ namespace Utilities.Observables
     public interface IProperty { }
 
     public abstract class PropertyBase<T, TValue, TChange> : IProperty
-    where TChange : IChange<T>
+        where TChange : IChange<T>
     {
         protected TValue _value;
 
@@ -51,16 +51,17 @@ namespace Utilities.Observables
         {
             var valueType = typeof(TValue);
 
+            if (valueType.IsPrimitive || valueType == typeof(string) ||
+                Value == null || newValue == null)
+            {
+                SetValue(newValue);
+                return;
+            }
+
             var setValueMethod = valueType.GetMethod("SetValue");
             if (setValueMethod != null)
             {
                 setValueMethod.Invoke(Value, new object[] { newValue });
-                return;
-            }
-
-            if (valueType.IsPrimitive || valueType == typeof(string))
-            {
-                SetValue(newValue);
                 return;
             }
 

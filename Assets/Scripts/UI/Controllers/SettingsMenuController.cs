@@ -4,8 +4,6 @@ namespace UI.Controllers
 {
     public class SettingsMenuController : UIMenu
     {
-        public override ParentDisplay ParentDisplay { get; protected set; } = ParentDisplay.Hide;
-
         private SliderInt _masterVolumeSlider;
         private Toggle _invertToggle;
 
