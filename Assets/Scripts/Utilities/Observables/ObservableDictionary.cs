@@ -116,33 +116,13 @@ namespace Utilities.Observables
         {
             if (EqualityComparer<Dictionary<TKey, TValue>>.Default.Equals(Value, newValue)) return;
 
-            var oldKeys = new HashSet<TKey>(Value.Keys);
+            foreach (var value in Value.Values)
+                ItemUnsubscribe(value);
 
-            foreach (var key in oldKeys)
-            {
-                if (newValue.ContainsKey(key)) continue;
+            _value = newValue;
 
-                ItemUnsubscribe(Value[key]);
-                Value.Remove(key);
-            }
-
-            foreach (var kvp in newValue)
-            {
-                if (Value.TryGetValue(kvp.Key, out var oldValue))
-                {
-                    ApplyFrom(oldValue, kvp.Value, () =>
-                    {
-                        ItemUnsubscribe(oldValue);
-                        Value[kvp.Key] = kvp.Value;
-                        ItemSubscribe(kvp.Value);
-                    });
-                }
-                else
-                {
-                    Value.Add(kvp.Key, kvp.Value);
-                    ItemSubscribe(kvp.Value);
-                }
-            }
+            foreach (var value in Value.Values)
+                ItemSubscribe(value);
 
             NotifyListeners(new DictionaryChange<TKey, TValue>(Value, DictionaryChangeType.Set));
         }
