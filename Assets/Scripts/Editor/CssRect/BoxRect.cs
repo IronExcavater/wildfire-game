@@ -6,8 +6,9 @@ using Utilities.Observables;
 
 namespace Editor.CssRect
 {
-    public class BoxRect : IObservable<BoxRect, ValueChange<BoxRect>>
+    public class BoxRect : IObservable<BoxRect, ValueChange<BoxRect>>, IComparable<BoxRect>
     {
+        public Guid Id { get; private set; } = Guid.NewGuid();
         public readonly Property<BoxRect> Parent = new(observeInnerValue: false);
         public readonly ObservableList<BoxRect> Children = new();
         public readonly Property<SerializedProperty> Property = new();
@@ -236,5 +237,7 @@ namespace Editor.CssRect
             Property.Value = null;
             return false;
         }
+
+        public int CompareTo(BoxRect other) => Id.CompareTo(other.Id);
     }
 }

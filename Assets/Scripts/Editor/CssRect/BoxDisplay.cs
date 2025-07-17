@@ -26,7 +26,7 @@ namespace Editor.CssRect
             var width = 0f;
             var height = 0f;
 
-            var children = target.Children.Value;
+            var children = target.Children.ToList();
             var gap = target.Gap.Value.Resolve(target.BoundsSize.Value);
 
             switch (boxDisplay)
@@ -92,7 +92,7 @@ namespace Editor.CssRect
         public static Vector2 ContainerPositionFromParent(this BoxDisplay boxDisplay, BoxRect target)
         {
             var parent = target.Parent.Value;
-            var siblings = parent.Children.Value;
+            var siblings = parent.Children.ToList();
 
             var basePos = parent.RectPosition.Value;
 

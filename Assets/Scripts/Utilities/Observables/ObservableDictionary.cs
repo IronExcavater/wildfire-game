@@ -30,7 +30,7 @@ namespace Utilities.Observables
                 if (EqualityComparer<TValue>.Default.Equals(kvp.Value, change.OldValue))
                 {
                     NotifyListeners(new DictionaryChange<TKey, TValue>(
-                        Value, DictionaryChangeType.Update, kvp.Key, change.OldValue, change.NewValue
+                        DictionaryChangeType.Update, kvp.Key, change.OldValue, change.NewValue
                     ));
                     break;
                 }
@@ -41,7 +41,6 @@ namespace Utilities.Observables
         public ICollection<TValue> Values => Value.Values;
         public int Count => Value.Count;
         public bool IsReadOnly => false;
-
         public IReadOnlyDictionary<TKey, TValue> ReadOnly => Value;
 
         public TValue this[TKey key]
@@ -57,7 +56,7 @@ namespace Utilities.Observables
                 ItemSubscribe(value);
 
                 NotifyListeners(new DictionaryChange<TKey, TValue>(
-                    Value, replaced ? DictionaryChangeType.Replace : DictionaryChangeType.Add,
+                    replaced ? DictionaryChangeType.Replace : DictionaryChangeType.Add,
                     key, oldValue, value
                 ));
             }
@@ -73,9 +72,7 @@ namespace Utilities.Observables
             Value.Add(key, value);
             ItemSubscribe(value);
 
-            NotifyListeners(new DictionaryChange<TKey, TValue>(
-                Value, DictionaryChangeType.Add, key, default, value
-            ));
+            NotifyListeners(new DictionaryChange<TKey, TValue>(DictionaryChangeType.Add, key, default, value));
         }
 
         public void Clear()
@@ -83,23 +80,19 @@ namespace Utilities.Observables
             foreach (var value in Value.Values)
                 ItemUnsubscribe(value);
 
-            NotifyListeners(new DictionaryChange<TKey, TValue>(Value, DictionaryChangeType.Clear));
-
             Value.Clear();
+            NotifyListeners(new DictionaryChange<TKey, TValue>(DictionaryChangeType.Clear));
         }
 
         public bool Remove(TKey key)
         {
-
             if (!Value.TryGetValue(key, out var value)) return false;
             var r = Value.Remove(key);
             if (r)
             {
                 ItemUnsubscribe(value);
 
-                NotifyListeners(new DictionaryChange<TKey, TValue>(
-                    Value, DictionaryChangeType.Remove, key, value
-                ));
+                NotifyListeners(new DictionaryChange<TKey, TValue>(DictionaryChangeType.Remove, key, value));
             }
             return r;
         }
@@ -112,19 +105,51 @@ namespace Utilities.Observables
             ((IDictionary<TKey, TValue>)Value).CopyTo(array, arrayIndex);
         public bool Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);
 
-        public override void SetValue(Dictionary<TKey, TValue> newValue)
+        public override void SetValue(Dictionary<TKey, TValue> newValue, bool isStable = false)
         {
             if (EqualityComparer<Dictionary<TKey, TValue>>.Default.Equals(Value, newValue)) return;
 
-            foreach (var value in Value.Values)
-                ItemUnsubscribe(value);
+            if (isStable)
+            {
+                var oldKeys = new HashSet<TKey>(Value.Keys);
 
-            _value = newValue;
+                foreach (var key in oldKeys)
+                {
+                    if (newValue.ContainsKey(key)) continue;
+                    ItemUnsubscribe(Value[key]);
+                    Value.Remove(key);
+                }
 
-            foreach (var value in Value.Values)
-                ItemSubscribe(value);
+                foreach (var kvp in newValue)
+                {
+                    if (Value.TryGetValue(kvp.Key, out var oldValue))
+                    {
+                        ApplyFrom(oldValue, kvp.Value, () =>
+                        {
+                            ItemUnsubscribe(oldValue);
+                            Value[kvp.Key] = kvp.Value;
+                            ItemSubscribe(kvp.Value);
+                        });
+                    }
+                    else
+                    {
+                        Value.Add(kvp.Key, kvp.Value);
+                        ItemSubscribe(kvp.Value);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var value in Value.Values)
+                    ItemUnsubscribe(value);
 
-            NotifyListeners(new DictionaryChange<TKey, TValue>(Value, DictionaryChangeType.Set));
+                _value = newValue;
+
+                foreach (var value in Value.Values)
+                    ItemSubscribe(value);
+            }
+
+            NotifyListeners(new DictionaryChange<TKey, TValue>(DictionaryChangeType.Set));
         }
 
         protected override void BindChanged(PropertyBase<TValue, Dictionary<TKey, TValue>, DictionaryChange<TKey, TValue>> other,

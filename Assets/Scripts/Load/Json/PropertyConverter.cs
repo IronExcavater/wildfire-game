@@ -1,6 +1,5 @@
 ﻿using System;
 using Newtonsoft.Json;
-using UnityEngine;
 using Utilities;
 using Utilities.Observables;
 
@@ -22,11 +21,12 @@ namespace Load.Json
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            var innerType = objectType.GetProperty("Value")?.PropertyType;
+            var valueProp = objectType.GetProperty("Value");
+            var innerType = valueProp?.PropertyType;
             var innerValue = serializer.Deserialize(reader, innerType);
 
             var instance = Activator.CreateInstance(objectType);
-            objectType.GetMethod("SetValue")?.Invoke(instance, new[] {innerValue});
+            valueProp?.SetValue(instance, innerValue);
             return instance;
         }
     }

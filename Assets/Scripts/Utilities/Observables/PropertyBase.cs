@@ -11,8 +11,8 @@ namespace Utilities.Observables
     {
         protected TValue _value;
 
-        protected readonly List<Action<PropertyBase<T, TValue, TChange>, TChange>> _listeners = new();
-        protected PropertyBase<T, TValue, TChange> _boundTo;
+        [NonSerialized] protected readonly List<Action<PropertyBase<T, TValue, TChange>, TChange>> _listeners = new();
+        [NonSerialized] protected PropertyBase<T, TValue, TChange> _boundTo;
 
         public bool StopBindPropagation;
         public bool ObserveInnerValue;
@@ -39,7 +39,46 @@ namespace Utilities.Observables
             return _value;
         }
 
-        public abstract void SetValue(TValue newValue);
+        /// <summary>
+        /// Sets the property's value with optional reference stability.
+        /// <para/>
+        /// When <paramref name="isStable"/> is <c>true</c>, merges values into the existing reference
+        /// via <see cref="ApplyFrom"/>, preserving listeners and minimising allocations. 100% reference stability is
+        /// impossible for this system, so use this only for stable, known object trees (e.g. settings, UI state).
+        /// <para/>
+        /// For dynamic or procedurally generated date (e.g. world chunks, entities, prefer the default behaviour
+        /// (<c>isStable = false</c>)to fully replace the value and avoid stale states.
+        /// </summary>
+        public abstract void SetValue(TValue newValue, bool isStable = false);
+
+        protected void ApplyFrom(T oldValue, T newValue, Action fallbackHandler)
+        {
+            var valueProp = typeof(T).GetProperty("Value");
+            if (valueProp != null && oldValue != null && newValue != null)
+            {
+                valueProp.SetValue(oldValue, valueProp.GetValue(newValue));
+            }
+            else if (!typeof(T).IsPrimitive && !typeof(T).IsValueType && typeof(T) != typeof(string) &&
+                     oldValue != null && newValue != null)
+            {
+                foreach (var field in typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public |
+                                                          BindingFlags.NonPublic))
+                {
+                    if (Attribute.IsDefined(field, typeof(NonSerializedAttribute))) continue;
+                    if (typeof(Delegate).IsAssignableFrom(field.FieldType)) continue;
+
+                    var fieldValueProp = field.FieldType.GetProperty("Value");
+                    var newField = field.GetValue(newValue);
+                    var oldField = field.GetValue(oldValue);
+
+                    if (fieldValueProp != null && newField != null && oldField != null)
+                        fieldValueProp.SetValue(oldField, fieldValueProp.GetValue(newField));
+                    else
+                        field.SetValue(oldValue, newField);
+                }
+            }
+            else fallbackHandler.Invoke();
+        }
 
         public void AddListener(Action<PropertyBase<T, TValue, TChange>, TChange> listener)
         {

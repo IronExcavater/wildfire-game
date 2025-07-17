@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Utilities.Observables
 {
-    public class ObservableList<T> : PropertyBase<T, List<T>, ListChange<T>>, IList<T>
+    public class ObservableList<T> : PropertyBase<T, SortedList<T, T>, DictionaryChange<T, T>>, IEnumerable<T>
+        where T : IComparable<T>
     {
-        public ObservableList(bool observeInnerValue = true)
-            : base(new(), observeInnerValue) { }
+        public ObservableList(bool observeInnerValue = true) : base(new(), observeInnerValue) { }
 
-        public ObservableList() { }
+        public ObservableList() : base(new()) { }
 
         protected void ItemSubscribe(T item)
         {
@@ -27,196 +26,150 @@ namespace Utilities.Observables
         {
             if (!ObserveInnerValue) return;
 
-            var index = Value.IndexOf(change.OldValue);
-            NotifyListeners(new ListChange<T>(
-                Value, ListChangeType.Update,
-                index, index
-            ));
+            NotifyListeners(new DictionaryChange<T, T>(DictionaryChangeType.Update, change.OldValue, change.OldValue, change.NewValue));
         }
 
         public int Count => Value.Count;
         public bool IsReadOnly => false;
 
-        public T this[int index]
-        {
-            get => Value[index];
-            set
-            {
-                ItemUnsubscribe(Value[index]);
-                var replaced = Value[index] != null;
+        public T this[int index] => Value.Values[index];
 
-                Value[index] = value;
-                ItemSubscribe(value);
+        public bool Contains(T item) => Value.ContainsKey(item);
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => Value.Values.GetEnumerator();
+        public int IndexOf(T item) => Value.IndexOfKey(item);
 
-                NotifyListeners(new ListChange<T>(
-                    Value, replaced ? ListChangeType.Replace : ListChangeType.Add,
-                    index, index,
-                    Value.GetRange(index, replaced ? 1 : 0)
-                ));
-            }
-        }
-
-        public bool Contains(T item) => Value.Contains(item);
-        public void CopyTo(T[] array, int arrayIndex) => Value.CopyTo(array, arrayIndex);
-        IEnumerator IEnumerable.GetEnumerator() => Value.GetEnumerator();
-        public IEnumerator<T> GetEnumerator() => Value.GetEnumerator();
-        public int IndexOf(T item) => Value.IndexOf(item);
-
-        public IReadOnlyList<T> ReadOnly => Value;
+        public List<T> ToList() => Value.Values.ToList();
+        public IReadOnlyList<T> ReadOnly => ToList().AsReadOnly();
 
         public void Add(T item)
         {
-            Value.Add(item);
+            Value[item] = item;
             ItemSubscribe(item);
 
-            var index = Value.Count - 1;
-            NotifyListeners(new ListChange<T>(
-                Value, ListChangeType.Add,
-                index, index + 1
-            ));
-        }
-
-        public void AddRange(IEnumerable<T> items)
-        {
-            var added = new List<T>(items);
-            var from = Value.Count;
-            Value.AddRange(added);
-            added.ForEach(ItemSubscribe);
-
-            NotifyListeners(new ListChange<T>(
-                Value, ListChangeType.Add,
-                from, Value.Count
-            ));
+            NotifyListeners(new DictionaryChange<T, T>(DictionaryChangeType.Add, item, default, item));
         }
 
         public void Clear()
         {
-            Value.ForEach(ItemUnsubscribe);
-
-            NotifyListeners(new ListChange<T>(
-                Value, ListChangeType.Remove,
-                0, Value.Count - 1,
-                Value.GetRange(0, Value.Count)
-            ));
+            foreach (var value in Value.Values)
+                ItemUnsubscribe(value);
 
             Value.Clear();
-        }
-
-        public void Insert(int index, T item)
-        {
-            Value.Insert(index, item);
-            ItemSubscribe(item);
-
-            NotifyListeners(new ListChange<T>(
-                Value, ListChangeType.Add,
-                index, index + 1
-            ));
+            NotifyListeners(new DictionaryChange<T, T>(DictionaryChangeType.Clear));
         }
 
         public bool Remove(T item)
         {
-            var index = Value.IndexOf(item);
+            if (!Value.TryGetValue(item, out _)) return false;
             var r = Value.Remove(item);
             if (r)
             {
                 ItemUnsubscribe(item);
 
-                NotifyListeners(new ListChange<T>(
-                    Value, ListChangeType.Remove,
-                    index, index + 1,
-                    new List<T>{item}
-                ));
+                NotifyListeners(new DictionaryChange<T, T>(DictionaryChangeType.Remove, item, item));
             }
             return r;
         }
 
         public void RemoveAt(int index)
         {
-            var item = Value[index];
+            var item = Value.Values[index];
+            if (!Value.ContainsValue(item)) return;
+
             ItemUnsubscribe(item);
             Value.RemoveAt(index);
 
-            NotifyListeners(new ListChange<T>(
-                Value, ListChangeType.Remove,
-                index, index + 1,
-                new List<T>{item}
-            ));
+            NotifyListeners(new DictionaryChange<T, T>(DictionaryChangeType.Remove, item, item));
         }
 
-        public override void SetValue(List<T> newValue)
+        public override void SetValue(SortedList<T, T> newValue, bool isStable = false)
         {
-            if (EqualityComparer<List<T>>.Default.Equals(Value, newValue)) return;
+            if (EqualityComparer<SortedList<T, T>>.Default.Equals(Value, newValue)) return;
 
-            var oldValue = new List<T>(Value);
-
-            oldValue.ForEach(ItemUnsubscribe);
-            _value = newValue;
-            Value.ForEach(ItemSubscribe);
-
-            var oldCount = oldValue.Count;
-            var newCount = newValue.Count;
-            var replaceTo = Math.Min(oldCount, newCount);
-
-            if (replaceTo > 0)
-                NotifyListeners(new ListChange<T>(
-                    Value, ListChangeType.Replace,
-                    0, replaceTo,
-                    Value.GetRange(0, replaceTo)
-                ));
-
-            if (newCount > oldCount)
+            if (isStable)
             {
-                NotifyListeners(new ListChange<T>(
-                    Value, ListChangeType.Add,
-                    replaceTo, newCount,
-                    Value.GetRange(replaceTo, newCount - replaceTo)
-                ));
+                var oldKeys = new HashSet<T>(Value.Keys);
+
+                foreach (var key in oldKeys)
+                {
+                    if (newValue.ContainsKey(key)) continue;
+                    ItemUnsubscribe(Value[key]);
+                    Value.Remove(key);
+                }
+
+                foreach (var kvp in newValue)
+                {
+                    if (Value.TryGetValue(kvp.Key, out var oldValue))
+                    {
+                        ApplyFrom(oldValue, kvp.Value, () =>
+                        {
+                            ItemUnsubscribe(oldValue);
+                            Value[kvp.Key] = kvp.Value;
+                            ItemSubscribe(kvp.Value);
+                        });
+                    }
+                    else
+                    {
+                        Value.Add(kvp.Key, kvp.Value);
+                        ItemSubscribe(kvp.Value);
+                    }
+                }
             }
-            else if (oldCount > newCount)
+            else
             {
-                NotifyListeners(new ListChange<T>(
-                    Value, ListChangeType.Remove,
-                    replaceTo, oldCount,
-                    oldValue.GetRange(replaceTo, oldCount - replaceTo)
-                ));
+                foreach (var value in Value.Values)
+                    ItemUnsubscribe(value);
+
+                _value = newValue;
+
+                foreach (var value in Value.Values)
+                    ItemSubscribe(value);
             }
+
+            NotifyListeners(new DictionaryChange<T, T>(DictionaryChangeType.Set));
         }
 
-        protected override void BindChanged(PropertyBase<T, List<T>, ListChange<T>> other, ListChange<T> change)
+        protected override void BindChanged(PropertyBase<T, SortedList<T, T>, DictionaryChange<T, T>> other,
+            DictionaryChange<T, T> change)
         {
             if (StopBindPropagation) return;
             _boundTo.StopBindPropagation = true;
 
-            var otherList = change.GetList;
-
-            if (change.WasPermutated)
+            switch (change.Type)
             {
-                Value.ForEach(ItemUnsubscribe);
-
-                _value.Clear();
-                _value.AddRange(otherList);
-
-                Value.ForEach(ItemSubscribe);
+                case DictionaryChangeType.Add:
+                    Value[change.Key] = change.NewValue;
+                    ItemSubscribe(change.NewValue);
+                    break;
+                case DictionaryChangeType.Remove:
+                    Value.Remove(change.Key);
+                    ItemUnsubscribe(change.OldValue);
+                    break;
+                case DictionaryChangeType.Replace:
+                    Value[change.Key] = change.NewValue;
+                    ItemUnsubscribe(change.OldValue);
+                    ItemSubscribe(change.NewValue);
+                    break;
+                case DictionaryChangeType.Update:
+                    NotifyListeners(change);
+                    break;
+                case DictionaryChangeType.Clear:
+                    foreach (var v in Value.Values)
+                        ItemUnsubscribe(v);
+                    Value.Clear();
+                    break;
+                case DictionaryChangeType.Set:
+                    foreach (var v in Value.Values)
+                        ItemUnsubscribe(v);
+                    Value.Clear();
+                    foreach (var kvp in other.Value)
+                    {
+                        Value[kvp.Key] = kvp.Value;
+                        ItemSubscribe(kvp.Value);
+                    }
+                    break;
             }
-
-            change.GetRemoved.ForEach(item =>
-            {
-                ItemUnsubscribe(item);
-                _value.Remove(item);
-            });
-
-            if (change.WasAdded)
-                for (var i = change.From; i < change.To; i++)
-                {
-                    var item = otherList[i];
-                    _value.Insert(i, item);
-                    ItemSubscribe(item);
-                }
-
-            if (change.WasUpdated)
-                for (var i = change.From; i < change.To; i++)
-                    if (!EqualityComparer<T>.Default.Equals(_value[i], otherList[i]))
-                        _value[i] = otherList[i];
 
             NotifyListeners(change);
             _boundTo.StopBindPropagation = false;

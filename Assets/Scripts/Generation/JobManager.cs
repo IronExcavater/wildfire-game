@@ -10,6 +10,8 @@ using Utilities;
 
 namespace Generation
 {
+    // TODO: Try to prioritise BuildMesh jobs on chunks that doesn't have any mesh over chunks that are just
+    // experiencing a change in LOD.
     public class JobManager : Singleton<JobManager>
     {
         private readonly ConcurrentQueue<IJob> _stagedJobs = new();
