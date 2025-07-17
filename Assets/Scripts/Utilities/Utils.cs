@@ -111,6 +111,34 @@ namespace Utilities
             return source.Skip(index).Take(count).ToList();
         }
 
+        public static bool HasReferenceIntegrity(object oldValue, object newValue, string contextName = "")
+        {
+            if (oldValue == null || newValue == null) return false;
+
+            var fields = oldValue.GetType()
+                .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(f => !f.FieldType.IsPrimitive)
+                .ToList();
+
+            var stable = true;
+            foreach (var field in fields)
+            {
+                var oldRef = field.GetValue(oldValue);
+                var newRef = field.GetValue(newValue);
+                if (ReferenceEquals(oldRef, newRef)) continue;
+
+                Debug.LogWarning($"⚠ Reference changed for {contextName}: Field '{field.Name}'");
+                stable = false;
+            }
+
+            if (stable)
+                Debug.Log($"✓ Internal references preserved for {contextName}");
+            else
+                Debug.LogWarning($"⚠ Internal references changed for {contextName}");
+
+            return stable;
+        }
+
         static readonly string[] SkipNamespaces = {
             "System.Reflection", "System.Type", "System.Globalization", "System.Configuration",
             "System.Security", "System.Threading", "System.Diagnostics", "System.Runtime",

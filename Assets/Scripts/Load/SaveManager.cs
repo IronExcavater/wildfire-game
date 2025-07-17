@@ -79,43 +79,17 @@ namespace Load
                 var text = File.ReadAllText(path);
                 var propertyType = property.GetType();
                 var valueProp = propertyType.GetProperty("Value");
+                var setValue = propertyType.GetMethod("SetValue");
                 var originalValue = valueProp?.GetValue(property);
 
-// Capture internal references (example for properties inside a class)
-                var originalFields = originalValue?.GetType()
-                    .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                    .ToDictionary(
-                        f => f.Name,
-                        f => f.GetValue(originalValue)
-                    );
-
-// Load from JSON
+                // Deserialize and apply
                 var temp = JsonConvert.DeserializeObject(text, propertyType, Instance._jsonSettings);
                 var newValue = valueProp?.GetValue(temp);
-
-                var setValue = propertyType.GetMethod("SetValue");
                 setValue?.Invoke(property, new[] { newValue, true });
 
-// Check if internal references are still the same
+                // Compare references directly
                 var updatedValue = valueProp?.GetValue(property);
-                bool allStable = true;
-                foreach (var field in originalFields!)
-                {
-                    var currentField = updatedValue?.GetType()
-                        .GetField(field.Key, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                        ?.GetValue(updatedValue);
-
-                    if (!ReferenceEquals(field.Value, currentField))
-                    {
-                        Debug.LogWarning($"Reference changed for field {field.Key}");
-                        allStable = false;
-                    }
-                }
-
-                if (allStable)
-                    Debug.Log($"✅ Internal references preserved for {name}");
-                else
-                    Debug.LogWarning($"❗ Internal references changed for {name}");
+                Utils.HasReferenceIntegrity(originalValue, updatedValue, name);
                 Debug.Log($"Loaded {name} from {path}");
             }
             catch (FileNotFoundException e)
