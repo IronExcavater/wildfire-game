@@ -9,17 +9,18 @@ namespace UI
     public class MenuManager : Singleton<MenuManager>
     {
         private VisualElement _root;
-        [SerializeField, SerializeReference, PolymorphicField] private UIMenu _rootMenu;
+        [SerializeField, SerializeReference, PolymorphicField] private MenuController rootMenu;
 
         protected override void Awake()
         {
             base.Awake();
             _root = GetComponent<UIDocument>().rootVisualElement;
 
-            var stylesheet = Resources.Load<StyleSheet>("UI/Styles/main");
-            _root.styleSheets.Add(stylesheet);
+            var stylesheets = Resources.LoadAll<StyleSheet>("UI/Styles");
+            foreach (var style in stylesheets)
+                _root.styleSheets.Add(style);
 
-            Instance._root.Add(_rootMenu?.Init().Root);
+            Instance._root.Add(rootMenu?.Init().Root);
         }
     }
 }

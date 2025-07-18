@@ -9,13 +9,13 @@ namespace Utilities.Observables
     public abstract class PropertyBase<T, TValue, TChange> : IProperty
         where TChange : IChange<T>
     {
-        protected TValue _value;
+        [NonSerialized] protected TValue _value;
 
         [NonSerialized] protected readonly List<Action<PropertyBase<T, TValue, TChange>, TChange>> _listeners = new();
         [NonSerialized] protected PropertyBase<T, TValue, TChange> _boundTo;
 
-        public bool StopBindPropagation;
-        public bool ObserveInnerValue;
+        [NonSerialized] public bool StopBindPropagation;
+        [NonSerialized] public bool ObserveInnerValue;
 
         protected PropertyBase(TValue initialValue = default, bool observeInnerValue = true)
         {
@@ -26,6 +26,7 @@ namespace Utilities.Observables
                 _value = initialValue;
 
             ObserveInnerValue = observeInnerValue;
+            ValueSubscribe();
         }
 
         public TValue Value
@@ -53,28 +54,34 @@ namespace Utilities.Observables
 
         protected void ApplyFrom(T oldValue, T newValue, Action fallbackHandler)
         {
-            var valueProp = typeof(T).GetProperty("Value");
-            if (valueProp != null && oldValue != null && newValue != null)
+            if (oldValue is IProperty oldProp && newValue is IProperty newProp)
             {
-                valueProp.SetValue(oldValue, valueProp.GetValue(newValue));
+                var setValue = typeof(T).GetMethod("SetValue");
+                setValue?.Invoke(oldProp,
+                    new[] { typeof(T).GetProperty("Value")?.GetValue(newValue), true });
             }
             else if (!typeof(T).IsPrimitive && !typeof(T).IsValueType && typeof(T) != typeof(string) &&
                      oldValue != null && newValue != null)
             {
-                foreach (var field in typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public |
-                                                          BindingFlags.NonPublic))
+                var fields = typeof(T)
+                    .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                foreach (var field in fields)
                 {
                     if (Attribute.IsDefined(field, typeof(NonSerializedAttribute))) continue;
                     if (typeof(Delegate).IsAssignableFrom(field.FieldType)) continue;
 
-                    var fieldValueProp = field.FieldType.GetProperty("Value");
-                    var newField = field.GetValue(newValue);
                     var oldField = field.GetValue(oldValue);
+                    var newField = field.GetValue(newValue);
 
-                    if (fieldValueProp != null && newField != null && oldField != null)
-                        fieldValueProp.SetValue(oldField, fieldValueProp.GetValue(newField));
-                    else
-                        field.SetValue(oldValue, newField);
+                    if (oldField is IProperty oldFieldProp && newField is IProperty newFieldProp)
+                    {
+                        var setValue = oldField.GetType().GetMethod("SetValue");
+                        setValue?.Invoke(oldFieldProp,
+                            new[] { newField.GetType().GetProperty("Value")?.GetValue(newField), true });
+                        continue;
+                    }
+
+                    field.SetValue(oldValue, newField);
                 }
             }
             else fallbackHandler.Invoke();

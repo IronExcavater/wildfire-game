@@ -11,24 +11,24 @@ namespace UI
     }
 
     [Serializable]
-    public class UIMenu
+    public class MenuController
     {
         [HideInInspector, SerializeField] private VisualTreeAsset _asset;
         private string _uxmlPath;
         public VisualElement Root { get; protected set; }
-        public UIMenu Parent { get; protected set; }
+        public MenuController Parent { get; protected set; }
         public ParentDisplay ParentDisplay { get; protected set; }
 
         protected VisualElement _menuContainer;
         protected VisualElement _submenuContainer;
 
-        protected UIMenu(string uxmlPath, ParentDisplay parentDisplay = ParentDisplay.Hide)
+        protected MenuController(string uxmlPath, ParentDisplay parentDisplay = ParentDisplay.Hide)
         {
             _uxmlPath = uxmlPath;
             ParentDisplay = parentDisplay;
         }
 
-        public virtual UIMenu Init()
+        public virtual MenuController Init()
         {
             _asset = Resources.Load<VisualTreeAsset>(_uxmlPath);
             Root = _asset.CloneTree();
@@ -38,28 +38,39 @@ namespace UI
             return this;
         }
 
-        public void Open(UIMenu child)
+        public void Open(MenuController child)
         {
             _submenuContainer.Clear();
-            _submenuContainer.Add(child.Root);
+
             child.Parent = this;
-            if (child.ParentDisplay == ParentDisplay.Hide) Hide();
+
+            if (child.ParentDisplay == ParentDisplay.Hide) Hide(() =>
+            {
+                _submenuContainer.Add(child.Root);
+                child.Show();
+            });
+            else child.Show();
         }
 
         public void Close()
         {
-            Root.RemoveFromHierarchy();
-            Parent?.Show();
+            Hide(() =>
+            {
+                Parent._submenuContainer.Remove(Root);
+                Parent.Show();
+            });
         }
 
-        public void Show()
+        public async void Show(Action onShown = null)
         {
-            _menuContainer.style.display = DisplayStyle.Flex;
+            await _menuContainer.DOFade(0, 1)();
+            onShown?.Invoke();
         }
 
-        public void Hide()
+        public async void Hide(Action onHidden = null)
         {
-            _menuContainer.style.display = DisplayStyle.None;
+            await _menuContainer.DOFade(1, 0)();
+            onHidden?.Invoke();
         }
     }
 }

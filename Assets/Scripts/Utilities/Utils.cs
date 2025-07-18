@@ -111,23 +111,57 @@ namespace Utilities
             return source.Skip(index).Take(count).ToList();
         }
 
-        public static bool HasReferenceIntegrity(object oldValue, object newValue, string contextName = "")
+        public static Dictionary<string, object> GetFieldReferences(object obj, string fieldPath = "", HashSet<object> visited = null)
         {
-            if (oldValue == null || newValue == null) return false;
+            var result = new Dictionary<string, object>();
+            visited ??= new HashSet<object>(new ReferenceEqualityComparer());
 
-            var fields = oldValue.GetType()
-                .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .Where(f => !f.FieldType.IsPrimitive)
-                .ToList();
+            if (obj == null || visited.Contains(obj))
+                return result;
 
-            var stable = true;
+            visited.Add(obj);
+
+            var type = obj.GetType();
+            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
             foreach (var field in fields)
             {
-                var oldRef = field.GetValue(oldValue);
-                var newRef = field.GetValue(newValue);
+                if (Attribute.IsDefined(field, typeof(NonSerializedAttribute))) continue;
+                if (typeof(Delegate).IsAssignableFrom(field.FieldType)) continue;
+
+                var fieldValue = field.GetValue(obj);
+                var fieldKey = string.IsNullOrEmpty(fieldPath) ? field.Name : $"{fieldPath}.{field.Name}";
+                result[fieldKey] = fieldValue;
+
+                if (fieldValue != null
+                    && !field.FieldType.IsPrimitive
+                    && field.FieldType != typeof(string)
+                    && !field.FieldType.IsEnum)
+                {
+                    var nestedRefs = GetFieldReferences(fieldValue, fieldPath, visited);
+                    foreach (var kvp in nestedRefs)
+                        result[kvp.Key] = kvp.Value;
+                }
+            }
+
+            return result;
+        }
+
+        public static bool HasReferenceIntegrity(
+            Dictionary<string, object> originalRefs,
+            Dictionary<string, object> updatedRefs,
+            string contextName = "")
+        {
+            var stable = true;
+            foreach (var kvp in originalRefs)
+            {
+                var fieldPath = kvp.Key;
+                var oldRef = kvp.Value;
+                updatedRefs.TryGetValue(fieldPath, out var newRef);
+
                 if (ReferenceEquals(oldRef, newRef)) continue;
 
-                Debug.LogWarning($"⚠ Reference changed for {contextName}: Field '{field.Name}'");
+                Debug.LogWarning($"⚠ Reference changed for {contextName}: Field '{fieldPath}'");
                 stable = false;
             }
 

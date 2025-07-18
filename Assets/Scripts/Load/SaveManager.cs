@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using Load.Json;
 using Newtonsoft.Json;
@@ -33,7 +31,6 @@ namespace Load
         {
             base.Awake();
 
-            Save(_settings);
             _settings.AddListener((_, _) => Save(_settings));
             Load(_settings);
         }
@@ -80,7 +77,7 @@ namespace Load
                 var propertyType = property.GetType();
                 var valueProp = propertyType.GetProperty("Value");
                 var setValue = propertyType.GetMethod("SetValue");
-                var originalValue = valueProp?.GetValue(property);
+                var original = Utils.GetFieldReferences(property);
 
                 // Deserialize and apply
                 var temp = JsonConvert.DeserializeObject(text, propertyType, Instance._jsonSettings);
@@ -88,8 +85,8 @@ namespace Load
                 setValue?.Invoke(property, new[] { newValue, true });
 
                 // Compare references directly
-                var updatedValue = valueProp?.GetValue(property);
-                Utils.HasReferenceIntegrity(originalValue, updatedValue, name);
+                var updated = Utils.GetFieldReferences(property);
+                Utils.HasReferenceIntegrity(original, updated, name);
                 Debug.Log($"Loaded {name} from {path}");
             }
             catch (FileNotFoundException e)
