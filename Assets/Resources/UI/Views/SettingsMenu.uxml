@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns="UnityEngine.UIElements">
-    <ui:Style src="UI/Styles/Base.uss" />
     <ui:VisualElement name="menu-container">
         <ui:Label text="Settings" />
         <ui:Label text="Volume" />

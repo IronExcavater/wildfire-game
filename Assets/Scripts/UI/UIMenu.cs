@@ -13,7 +13,8 @@ namespace UI
     [Serializable]
     public class UIMenu
     {
-        private VisualTreeAsset _asset;
+        [HideInInspector, SerializeField] private VisualTreeAsset _asset;
+        private string _uxmlPath;
         public VisualElement Root { get; protected set; }
         public UIMenu Parent { get; protected set; }
         public ParentDisplay ParentDisplay { get; protected set; }
@@ -23,13 +24,18 @@ namespace UI
 
         protected UIMenu(string uxmlPath, ParentDisplay parentDisplay = ParentDisplay.Hide)
         {
-            _asset = Resources.Load<VisualTreeAsset>(uxmlPath);
-            Root = _asset.CloneTree();
-
+            _uxmlPath = uxmlPath;
             ParentDisplay = parentDisplay;
+        }
+
+        public virtual UIMenu Init()
+        {
+            _asset = Resources.Load<VisualTreeAsset>(_uxmlPath);
+            Root = _asset.CloneTree();
 
             _menuContainer = Root.Q<VisualElement>("menu-container");
             _submenuContainer = Root.Q<VisualElement>("submenu-container");
+            return this;
         }
 
         public void Open(UIMenu child)

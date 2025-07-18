@@ -1,7 +1,7 @@
-using UI.Controllers;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Utilities;
+using Utilities.Attributes;
 
 namespace UI
 {
@@ -9,14 +9,17 @@ namespace UI
     public class MenuManager : Singleton<MenuManager>
     {
         private VisualElement _root;
-        [SerializeField] private UIMenu _rootMenu;
+        [SerializeField, SerializeReference, PolymorphicField] private UIMenu _rootMenu;
 
         protected override void Awake()
         {
             base.Awake();
             _root = GetComponent<UIDocument>().rootVisualElement;
-            var menu = new MainMenuController();
-            Instance._root.Add(menu.Root);
+
+            var stylesheet = Resources.Load<StyleSheet>("UI/Styles/main");
+            _root.styleSheets.Add(stylesheet);
+
+            Instance._root.Add(_rootMenu?.Init().Root);
         }
     }
 }

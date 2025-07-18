@@ -7,12 +7,16 @@ namespace UI.Controllers
         private SliderInt _masterVolumeSlider;
         private Toggle _invertToggle;
 
-        public SettingsMenuController() : base("UI/Views/SettingsMenu")
+        public SettingsMenuController() : base("UI/Views/SettingsMenu") { }
+
+        public override UIMenu Init()
         {
+            base.Init();
             Root.Q<Button>("back-button").clicked += Close;
 
             _masterVolumeSlider = Root.Q<SliderInt>("master-volume-slider");
             _invertToggle = Root.Q<Toggle>("invert-toggle");
+            return this;
         }
     }
 }
