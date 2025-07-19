@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace UI.Controllers
 {
-    public class SettingsMenuControllerController : MenuController
+    public class SettingsMenuController : MenuController
     {
         private Slider _masterVolumeSlider;
         private Slider _musicVolumeSlider;
@@ -17,7 +17,7 @@ namespace UI.Controllers
         private Slider _rotateSpeedSlider;
         private Slider _zoomSpeedSlider;
 
-        public SettingsMenuControllerController() : base("UI/Views/SettingsMenu") { }
+        public SettingsMenuController() : base("UI/Views/SettingsMenu") { }
 
         public override MenuController Init()
         {

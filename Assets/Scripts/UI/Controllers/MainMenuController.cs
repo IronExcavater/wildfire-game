@@ -13,6 +13,6 @@ namespace UI.Controllers
             return this;
         }
 
-        private void OpenSettings() => Open(new SettingsMenuControllerController().Init());
+        private void OpenSettings() => Open(new SettingsMenuController().Init());
     }
 }
