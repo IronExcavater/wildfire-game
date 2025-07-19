@@ -35,29 +35,37 @@ namespace Load
             Load(_settings);
         }
 
-        private static string JsonPath(IProperty property, out string name)
+        private static DirectoryInfo SaveDirectory()
+        {
+            var path = $"{Application.persistentDataPath}/Save/";
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+            return new DirectoryInfo(path);
+        }
+
+        private static FileInfo SaveFile(IProperty property, out string name)
         {
             name = Utils.GetName(Instance, property).ToLower();
             name = Regex.Replace(name, @"^[_\s]+", "");
             name = Regex.Replace(name, "[^a-z0-9]+", "-");
-            return $"{Application.persistentDataPath}/{name}.json";
+            return new FileInfo(Path.Combine(SaveDirectory().FullName, $"{name}.json"));
         }
 
         private static void Save(IProperty property)
         {
             if (_currentlyLoading.Contains(property)) return;
 
-            var path = JsonPath(property, out var name);
+            var file = SaveFile(property, out var name);
 
             try
             {
                 var json = JsonConvert.SerializeObject(property, Instance._jsonSettings);
-                File.WriteAllText(path, json);
-                Debug.Log($"Saved {name} to {path}");
+                File.WriteAllText(file.FullName, json);
+                Debug.Log($"Saved {name} to {file.FullName}");
             }
             catch (UnauthorizedAccessException e)
             {
-                Debug.LogError($"No permission to write save file: {path}\n{e}");
+                Debug.LogError($"No permission to write save file: {file.FullName}\n{e}");
             }
             catch (Exception e)
             {
@@ -69,11 +77,11 @@ namespace Load
         {
             _currentlyLoading.Add(property);
 
-            var path = JsonPath(property, out var name);
+            var file = SaveFile(property, out var name);
 
             try
             {
-                var text = File.ReadAllText(path);
+                var text = File.ReadAllText(file.FullName);
                 var propertyType = property.GetType();
                 var valueProp = propertyType.GetProperty("Value");
                 var setValue = propertyType.GetMethod("SetValue");
@@ -87,7 +95,7 @@ namespace Load
                 // Compare references directly
                 var updated = Utils.GetFieldReferences(property);
                 Utils.HasReferenceIntegrity(original, updated, name);
-                Debug.Log($"Loaded {name} from {path}");
+                Debug.Log($"Loaded {name} from {file.FullName}");
             }
             catch (FileNotFoundException e)
             {
@@ -95,7 +103,7 @@ namespace Load
             }
             catch (UnauthorizedAccessException e)
             {
-                Debug.LogError($"No permission to read save file: {path}\n{e}");
+                Debug.LogError($"No permission to read save file: {file.FullName}\n{e}");
             }
             catch (Exception e)
             {

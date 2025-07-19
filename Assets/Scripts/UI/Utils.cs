@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UI.Transitions;
 using UnityEngine.UIElements;
+using Utilities;
 using Utilities.Observables;
 
 namespace UI
@@ -49,6 +50,12 @@ namespace UI
             field.RegisterValueChangedCallback(evt => property.Value = evt.newValue);
             property.AddListener((_, change) => field.SetValueWithoutNotify(change.NewValue));
             field.SetValueWithoutNotify(property.Value);
+        }
+
+        public static void SetRange<T>(this BaseSlider<T> slider, T min, T max) where T : IComparable<T>
+        {
+            slider.lowValue = min;
+            slider.highValue = max;
         }
     }
 }

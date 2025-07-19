@@ -25,6 +25,11 @@
     --info: #2196f3;
 }
 
+Slider, SliderInt {
+    flex-grow: 1;
+    min-width: 100px;
+}
+
 Button {
     background-color: var(--accent-lightest);
     border-radius: 10px;
@@ -37,4 +42,24 @@ Button:hover {
 
 Button:active {
     background-color: var(--accent);
+}
+
+.h1 {
+    font-size: 36px;
+}
+
+.h2 {
+    font-size: 24px;
+}
+
+.h3 {
+    font-size: 20px;
+}
+
+.row {
+    flex-direction: row;
+}
+
+.flex-grow {
+    flex-grow: 1;
 }

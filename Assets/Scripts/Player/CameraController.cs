@@ -1,35 +1,10 @@
-using System;
+using Load;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Utilities.Observables;
+using Utilities;
 
 namespace Player
 {
-    [Serializable]
-    public class CameraSettings : IObservable<CameraSettings, ValueChange<CameraSettings>>
-    {
-        public Property<bool> InvertPan = new();
-        public Property<bool> InvertRotate = new();
-        public Property<bool> InvertZoom = new();
-
-        public Property<float> PanSpeed = new(1f);
-        public Property<float> RotateSpeed = new(10f);
-        public Property<float> ZoomSpeed = new(60f);
-
-        public event Action<ValueChange<CameraSettings>> OnChanged;
-        public void InvokeOnChanged() => OnChanged?.Invoke(new ValueChange<CameraSettings>(this, this));
-
-        public CameraSettings()
-        {
-            InvertPan.AddListener((_, _) => InvokeOnChanged());
-            InvertRotate.AddListener((_, _) => InvokeOnChanged());
-            InvertZoom.AddListener((_, _) => InvokeOnChanged());
-            PanSpeed.AddListener((_, _) => InvokeOnChanged());
-            RotateSpeed.AddListener((_, _) => InvokeOnChanged());
-            ZoomSpeed.AddListener((_, _) => InvokeOnChanged());
-        }
-    }
-
     [RequireComponent(typeof(Camera))]
     public class CameraController : MonoBehaviour
     {
@@ -40,8 +15,6 @@ namespace Player
         }
 
         private CameraMode _mode = CameraMode.Auto;
-
-        public CameraSettings settings;
 
         public CameraMode Mode
         {
@@ -60,17 +33,17 @@ namespace Player
 
         [Header("Control Bounds")]
         public float minZoom = 20f;
-        public float minTilt = 20f;
-        public float maxTilt = 80f;
+        public MinMax tiltRange = new(20f, 80f);
 
         [Header("Control Smoothing")]
         public float targetSmoothing = 2f;
         public float cameraSmoothing = 80f;
 
         private Camera _camera;
+        private CameraSettings _cameraSettings;
         private Vector3 _smoothTargetPosition;
         private Vector3 _smoothCameraPosition;
-        public Vector3? focusTarget;
+        public Vector3? FocusTarget;
         public Bounds cameraBounds;
 
         [Header("Input Actions")]
@@ -87,6 +60,7 @@ namespace Player
         private void Awake()
         {
             _camera = GetComponent<Camera>();
+            _cameraSettings = SaveManager.Settings.Value.Camera.Value;
         }
 
         private void OnEnable()
@@ -110,7 +84,7 @@ namespace Player
             switch (Mode)
             {
                 case CameraMode.Auto:
-                    var focus = ClampPosition(focusTarget ?? cameraBounds.center);
+                    var focus = ClampPosition(FocusTarget ?? cameraBounds.center);
                     _targetPosition = new Vector3(focus.x, 0, focus.z);
                     _targetTilt = autoTilt;
                     _targetZoom = autoZoom;
@@ -133,9 +107,9 @@ namespace Player
 
         private void HandleInput()
         {
-            var panInput = panAction.action.ReadValue<Vector2>() * (settings.InvertPan.Value ? -1 : 1);
-            var rotateInput = rotateAction.action.ReadValue<Vector2>() * (settings.InvertRotate.Value ? -1 : 1);
-            var zoomInput = zoomAction.action.ReadValue<float>() * (settings.InvertZoom.Value ? -1 : 1);
+            var panInput = panAction.action.ReadValue<Vector2>() * (_cameraSettings.InvertPan.Value ? -1 : 1);
+            var rotateInput = rotateAction.action.ReadValue<Vector2>() * (_cameraSettings.InvertRotate.Value ? -1 : 1);
+            var zoomInput = zoomAction.action.ReadValue<float>() * (_cameraSettings.InvertZoom.Value ? -1 : 1);
 
             if (panInput != Vector2.zero || rotateInput != Vector2.zero || zoomInput != 0f)
             {
@@ -144,13 +118,13 @@ namespace Player
                 var right = Quaternion.Euler(0, _targetYaw, 0) * Vector3.right;
                 var forward = Quaternion.Euler(0, _targetYaw, 0) * Vector3.forward;
 
-                _targetPosition += settings.PanSpeed.Value * (_targetZoom / 100) * (right * panInput.x + forward * panInput.y);
+                _targetPosition += _cameraSettings.PanSpeed.Value * (_targetZoom / 100) * (right * panInput.x + forward * panInput.y);
                 _targetPosition = ClampPosition(_targetPosition);
 
-                _targetYaw += rotateInput.x * settings.RotateSpeed.Value * Time.deltaTime;
-                _targetTilt = Mathf.Clamp(_targetTilt - rotateInput.y * settings.RotateSpeed.Value * Time.deltaTime, minTilt, maxTilt);
+                _targetYaw += rotateInput.x * _cameraSettings.RotateSpeed.Value * Time.deltaTime;
+                _targetTilt = tiltRange.Clamp(_targetTilt - rotateInput.y * _cameraSettings.RotateSpeed.Value * Time.deltaTime);
 
-                _targetZoom = ClampZoom(_targetZoom - zoomInput * settings.ZoomSpeed.Value * Time.deltaTime);
+                _targetZoom = ClampZoom(_targetZoom - zoomInput * _cameraSettings.ZoomSpeed.Value * Time.deltaTime);
             }
         }
 

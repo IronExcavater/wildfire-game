@@ -15,6 +15,8 @@ namespace Utilities
             this.max = max;
         }
 
+        public float Clamp(float v) => Mathf.Clamp(v, min, max);
+
         public float Lerp(float t) => Mathf.Lerp(min, max, t);
         public float Range => max - min;
     }
