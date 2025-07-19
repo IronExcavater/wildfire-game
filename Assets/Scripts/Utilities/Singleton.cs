@@ -32,6 +32,21 @@ namespace Utilities
             else if (_instance != this) Destroy(gameObject);
         }
 
+        protected virtual void OnEnable()
+        {
+            if (_instance == null) _instance = this as T;
+        }
+
+        protected virtual void OnDisable()
+        {
+            if (_instance == this) _instance = null;
+        }
+
+        protected virtual void OnDestroy()
+        {
+            if (_instance == this) _instance = null;
+        }
+
         public bool IsPersistent()
         {
             return typeof(T).GetCustomAttributes(typeof(DoNotDestroySingletonAttribute), true).Length > 0;

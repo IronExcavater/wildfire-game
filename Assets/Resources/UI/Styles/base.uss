@@ -1,7 +1,40 @@
-#menu-container {
-    max-height: 100%;
+:root {
+    --primary-lightest: #fff7cc;
+    --primary-light: #ffe066;
+    --primary: #ffbb00;
+    --primary-dark: #cc9600;
+    
+    --accent-lightest: #e6f7ff;
+    --accent-light: #99e0ff;
+    --accent: #00c4ff;
+    --accent-dark: #0090cc;
+
+    --neutral-100: #ffffff;
+    --neutral-200: #f7f7f7;
+    --neutral-300: #eeeeee;
+    --neutral-400: #dddddd;
+    --neutral-500: #bbbbbb;
+    --neutral-600: #999999;
+    --neutral-700: #666666;
+    --neutral-800: #333333;
+    --neutral-900: #111111;
+
+    --success: #4caf50;
+    --warning: #ffc107;
+    --error: #e53935;
+    --info: #2196f3;
 }
 
-button {
-    border-radius: 5px;
+Button {
+    background-color: var(--accent-lightest);
+    border-radius: 10px;
+    transition: background-color 0.3s;
+}
+
+Button:hover {
+    background-color: var(--accent-light);
+}
+
+Button:active {
+    background-color: var(--accent);
 }
