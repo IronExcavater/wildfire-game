@@ -1,38 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns="UnityEngine.UIElements">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UI.UIElements">
     <ui:VisualElement name="menu-container">
         <ui:VisualElement class="row">
             <ui:Label text="Settings" class="h1 flex-grow" />
             <ui:Button name="back-button" text="Back" />
         </ui:VisualElement>
-        <ui:Label text="Audio Settings" class="h2" />
-        <ui:VisualElement class="row">
-            <ui:Label text="Master" />
-            <ui:Slider class="slider" name="master-volume-slider" />
-        </ui:VisualElement>
-        <ui:VisualElement class="row">
-            <ui:Label text="Music" />
-            <ui:Slider class="slider" name="music-volume-slider" />
-        </ui:VisualElement>
-        <ui:VisualElement class="row">
-            <ui:Label text="Sfx"/>
-            <ui:Slider class="slider" name="sfx-volume-slider" />
-        </ui:VisualElement>
-        <ui:Label text="Camera Settings" class="h2" />
-        <ui:Toggle name="invert-pan-toggle" text="Invert Pan" />
-        <ui:Toggle name="invert-rotate-toggle" text="Invert Rotate" />
-        <ui:Toggle name="invert-zoom-toggle" text="Invert Zoom" />
-        <ui:VisualElement class="row">
-            <ui:Label text="Pan Speed" />
-            <ui:Slider class="slider" name="pan-speed-slider" />
-        </ui:VisualElement>
-        <ui:VisualElement class="row">
-            <ui:Label text="Rotate Speed" />
-            <ui:Slider class="slider" name="rotate-speed-slider" />
-        </ui:VisualElement>
-        <ui:VisualElement class="row">
-            <ui:Label text="Zoom Speed" />
-            <ui:Slider class="slider" name="zoom-speed-slider" />
-        </ui:VisualElement>
+        <ui:ScrollView>
+            <ui:Label text="Audio Settings" class="h2" />
+            <ui:Slider class="slider" name="master-volume-slider" label="Master" />
+            <ui:Slider class="slider" name="music-volume-slider" label="Music" />
+            <ui:Slider class="slider" name="sfx-volume-slider" label="Sfx" />
+            <uie:ExtendedSlider />
+            
+            <ui:Label text="Camera Settings" class="h2" />
+            <ui:Toggle name="invert-pan-toggle" label="Invert Pan" />
+            <ui:Toggle name="invert-rotate-toggle" label="Invert Rotate" />
+            <ui:Toggle name="invert-zoom-toggle" label="Invert Zoom" />
+            <ui:Slider class="slider" name="pan-speed-slider" label="Pan Speed" />
+            <ui:Slider class="slider" name="rotate-speed-slider" label="Rotate Speed" />
+            <ui:Slider class="slider" name="zoom-speed-slider" label="Zoom Speed" />
+        </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>

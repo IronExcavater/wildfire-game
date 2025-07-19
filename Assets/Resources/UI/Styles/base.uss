@@ -35,11 +35,9 @@ Button {
     border-radius: 10px;
     transition: background-color 0.3s;
 }
-
 Button:hover {
     background-color: var(--accent-light);
 }
-
 Button:active {
     background-color: var(--accent);
 }
@@ -58,8 +56,18 @@ Button:active {
 
 .row {
     flex-direction: row;
+    flex-shrink: 0;
 }
 
 .flex-grow {
     flex-grow: 1;
+}
+
+/* Extended Slider Styling */
+.extended-slider__filler {
+    height: 6px;
+    position: absolute;
+    top: 50%;
+    margin-top: -3px;
+    background-color: var(--accent);
 }
