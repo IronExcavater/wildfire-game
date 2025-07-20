@@ -5,7 +5,6 @@ using UnityEngine;
 using Utilities;
 using Utilities.Attributes;
 using Utilities.Observables;
-using Random = System.Random;
 
 namespace Generation.Passes
 {
@@ -39,17 +38,20 @@ namespace Generation.Passes
             var chunkWorldPos = chunk.WorldPosition;
             var heightmap = chunk.GetHeightmap();
             var offset = GetNoiseOffset();
-            var rng = new Random(offset + chunk.Position.GetHashCode());
             var step = treeSpacing * resolution;
 
             for (float y = 0; y < size; y += step)
             for (float x = 0; x < size; x += step)
             {
-                var jitterX = ((float)rng.NextDouble() - 0.5f) * treeJitter * step;
-                var jitterY = ((float)rng.NextDouble() - 0.5f) * treeJitter * step;
+                var cellX = chunkWorldPos.x + x / resolution;
+                var cellY = chunkWorldPos.z + y / resolution;
 
-                var worldX = chunkWorldPos.x + (x + jitterX) / resolution;
-                var worldY = chunkWorldPos.z + (y + jitterY) / resolution;
+                var jitterAmount = NormalizedHash(cellX, cellY, offset + 100) * treeJitter * step * 0.5f;
+                var jitterAngle = NormalizedHash(cellX, cellY, offset + 101) * Mathf.PI * 2f;
+                var jitter = new Vector2(Mathf.Cos(jitterAngle), Mathf.Sin(jitterAngle)) * jitterAmount;
+
+                var worldX = chunkWorldPos.x + (x + jitter.x) / resolution;
+                var worldY = chunkWorldPos.z + (y + jitter.y) / resolution;
 
                 var height = World.GetHeight(new Vector2(worldX, worldY), chunk.Position, heightmap.Value);
 
@@ -69,11 +71,12 @@ namespace Generation.Passes
                 var boosted = Mathf.Pow(valleyFactor, 1.5f) * (1f + forestMask * valleyBoost);
                 var spawnProbability = spawnChance.Lerp(Mathf.Clamp01(boosted));
 
-                if (rng.NextDouble() > spawnProbability)
+                float spawnRoll = NormalizedHash(worldX, worldY, offset + 400);
+                if (spawnRoll > spawnProbability)
                     continue;
 
-                var rotationY = (float)(rng.NextDouble() * 360.0);
-                var scale = treeScale.Lerp((float)rng.NextDouble());
+                var rotationY = NormalizedHash(cellX, cellY, offset + 200) * 360f;
+                var scale = treeScale.Lerp(NormalizedHash(cellX, cellY, offset + 300));
 
                 var entity = new Property<Entity>(new Entity(typeof(TreeObject), chunk));
                 entity.Value.Position.Value = new Vector3(worldX, height, worldY);
