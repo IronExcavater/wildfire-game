@@ -46,7 +46,7 @@ namespace Generation.Passes
                 var cellX = chunkWorldPos.x + x / resolution;
                 var cellY = chunkWorldPos.z + y / resolution;
 
-                var jitterAmount = NormalizedHash(cellX, cellY, offset + 100) * treeJitter * step * 0.5f;
+                var jitterAmount = NormalizedHash(cellX, cellY, offset + 100) * treeJitter * step;
                 var jitterAngle = NormalizedHash(cellX, cellY, offset + 101) * Mathf.PI * 2f;
                 var jitter = new Vector2(Mathf.Cos(jitterAngle), Mathf.Sin(jitterAngle)) * jitterAmount;
 

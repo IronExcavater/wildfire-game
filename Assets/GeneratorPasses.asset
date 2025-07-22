@@ -16,6 +16,7 @@ MonoBehaviour:
   passes:
   - rid: 1915427534221344837
   - rid: 1915427559924826246
+  - rid: 2965629625440403518
   references:
     version: 2
     RefIds:
@@ -45,3 +46,10 @@ MonoBehaviour:
         treeScale:
           min: 0.8
           max: 1.2
+    - rid: 2965629625440403518
+      type: {class: TownPass, ns: Generation.Passes, asm: Assembly-CSharp}
+      data:
+        cellSize: 512
+        frequency: 0.005
+        threshold: 0.6
+        maxJitter: 0.2

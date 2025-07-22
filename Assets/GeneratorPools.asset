@@ -26,3 +26,6 @@ MonoBehaviour:
       - {fileID: 1892503390068243435, guid: b87c3917f5edb754aa16ad7920fee466, type: 3}
       - {fileID: 9103212171049441755, guid: 799f21c906fd95c49981dc3c609d16d6, type: 3}
       - {fileID: 1390885176819459333, guid: 602e332fb03c4ef49ad3e9c8592019a0, type: 3}
+    - Key: Generation.Objects.TownObject
+      Value:
+      - {fileID: 1392676312376692004, guid: 469f070adb692474f9384fe91630c389, type: 3}
