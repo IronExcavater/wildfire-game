@@ -12,13 +12,15 @@ namespace UI.UIElements
         public ExtendedSlider()
         {
             AddToClassList("extended-slider");
-            RegisterCallback<GeometryChangedEvent>(_ => Init());
+            RegisterCallback<GeometryChangedEvent>(_ =>
+            {
+                if (_fill == null) Init();
+                else UpdatePosition();
+            });
         }
 
         private void Init()
         {
-            if (_fill != null) return;
-
             _fill = new VisualElement { name = "extended-filler" };
             _fill.AddToClassList("extended-slider__filler");
 
@@ -43,6 +45,13 @@ namespace UI.UIElements
 
             this.RegisterValueChangedCallback(_ => UpdateValue());
             UpdateValue();
+
+            schedule.Execute(() =>
+            {
+                var highLabelWidth = _highLabel.resolvedStyle.width;
+                _dragger.style.width = highLabelWidth;
+                schedule.Execute(UpdatePosition);
+            });
         }
 
         private void UpdateValue()
