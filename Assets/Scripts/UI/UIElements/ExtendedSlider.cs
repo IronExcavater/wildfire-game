@@ -4,58 +4,66 @@ using UnityEngine.UIElements;
 namespace UI.UIElements
 {
     [UxmlElement]
-    public partial class ExtendedSlider : VisualElement
+    public partial class ExtendedSlider : Slider
     {
-        [UxmlAttribute(name = "show-fill")] public bool showFill { get; set; } = true;
-        [UxmlAttribute(name = "show-value")] public bool showValueLabel { get; set; } = true;
-        [UxmlAttribute(name = "show-min-max")] public bool showMinMaxLabels { get; set; } = true;
-
-        private readonly Slider _slider;
-        private readonly VisualElement _fill;
-        private readonly Label _valueLabel, _lowLabel, _highLabel;
+        private VisualElement _fill, _dragger;
+        private Label _valueLabel, _lowLabel, _highLabel;
 
         public ExtendedSlider()
         {
             AddToClassList("extended-slider");
-
-            _slider = new Slider(0, 100);
-            _fill = new VisualElement { name = "extended-filler" };
-            _fill.AddToClassList("extended-slider__filler");
-            _valueLabel = new Label { name = "value-label" };
-            _lowLabel = new Label { name = "low-label" };
-            _highLabel = new Label { name = "high-label" };
-
-            if (showMinMaxLabels)
-            {
-                var sliderInput = _slider.Q(className: "unity-slider__input");
-                sliderInput.Insert(0, _lowLabel);
-                sliderInput.Add(_highLabel);
-            }
-
-            if (showFill)
-            {
-                var dragContainer = _slider.Q("unity-drag-container");
-                dragContainer.Insert(1, _fill);
-            }
-
-            if (showValueLabel)
-            {
-                var dragger = _slider.Q("unity-dragger");
-                dragger.Add(_valueLabel);
-            }
-
-            Add(_slider);
-            _slider.RegisterValueChangedCallback(_ => ValueChanged());
-            ValueChanged();
+            RegisterCallback<GeometryChangedEvent>(_ => Init());
         }
 
-        private void ValueChanged()
+        private void Init()
         {
-            var percent = Mathf.InverseLerp(_slider.lowValue, _slider.highValue, _slider.value);
+            if (_fill != null) return;
+
+            _fill = new VisualElement { name = "extended-filler" };
+            _fill.AddToClassList("extended-slider__filler");
+
+            _valueLabel = new Label { name = "extended-value-label" };
+            _valueLabel.AddToClassList("extended-slider__value");
+
+            _lowLabel = new Label { name = "extended-low-label" };
+            _lowLabel.AddToClassList("extended-slider__low");
+
+            _highLabel = new Label { name = "extended-high-label" };
+            _highLabel.AddToClassList("extended-slider__high");
+
+            var sliderInput = this.Q(className: "unity-slider__input");
+            sliderInput.Insert(0, _lowLabel);
+            sliderInput.Add(_highLabel);
+
+            var dragContainer = this.Q("unity-drag-container");
+            dragContainer.Insert(1, _fill);
+            dragContainer.Add(_valueLabel);
+
+            _dragger = this.Q("unity-dragger");
+
+            this.RegisterValueChangedCallback(_ => UpdateValue());
+            UpdateValue();
+        }
+
+        private void UpdateValue()
+        {
+            var percent = Mathf.InverseLerp(lowValue, highValue, value);
             _fill.style.width = Length.Percent(percent * 100);
-            _valueLabel.text = _slider.value.ToString("N0");
-            _lowLabel.text = _slider.lowValue.ToString("N0");
-            _highLabel.text = _slider.highValue.ToString("N0");
+
+            _valueLabel.text = value.ToString("N0");
+            _lowLabel.text = lowValue.ToString("N0");
+            _highLabel.text = highValue.ToString("N0");
+
+            schedule.Execute(UpdatePosition);
+            UpdatePosition();
+        }
+
+        private void UpdatePosition()
+        {
+            var xTranslate = _dragger.resolvedStyle.translate.x
+                             + _dragger.resolvedStyle.width / 2
+                             - _valueLabel.resolvedStyle.width / 2;
+            _valueLabel.style.translate = new Translate(xTranslate, 0);
         }
     }
 }

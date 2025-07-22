@@ -7,18 +7,17 @@
         </ui:VisualElement>
         <ui:ScrollView>
             <ui:Label text="Audio Settings" class="h2" />
-            <ui:Slider class="slider" name="master-volume-slider" label="Master" />
-            <ui:Slider class="slider" name="music-volume-slider" label="Music" />
-            <ui:Slider class="slider" name="sfx-volume-slider" label="Sfx" />
-            <uie:ExtendedSlider />
+            <uie:ExtendedSlider class="slider" name="master-volume-slider" label="Master" />
+            <uie:ExtendedSlider class="slider" name="music-volume-slider" label="Music" />
+            <uie:ExtendedSlider class="slider" name="sfx-volume-slider" label="Sfx" />
             
             <ui:Label text="Camera Settings" class="h2" />
             <ui:Toggle name="invert-pan-toggle" label="Invert Pan" />
             <ui:Toggle name="invert-rotate-toggle" label="Invert Rotate" />
             <ui:Toggle name="invert-zoom-toggle" label="Invert Zoom" />
-            <ui:Slider class="slider" name="pan-speed-slider" label="Pan Speed" />
-            <ui:Slider class="slider" name="rotate-speed-slider" label="Rotate Speed" />
-            <ui:Slider class="slider" name="zoom-speed-slider" label="Zoom Speed" />
+            <uie:ExtendedSlider class="slider" name="pan-speed-slider" label="Pan Speed" />
+            <uie:ExtendedSlider class="slider" name="rotate-speed-slider" label="Rotate Speed" />
+            <uie:ExtendedSlider class="slider" name="zoom-speed-slider" label="Zoom Speed" />
         </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>

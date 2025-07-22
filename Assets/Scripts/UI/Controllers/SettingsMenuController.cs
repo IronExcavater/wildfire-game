@@ -1,21 +1,22 @@
 using Load;
+using UI.UIElements;
 using UnityEngine.UIElements;
 
 namespace UI.Controllers
 {
     public class SettingsMenuController : MenuController
     {
-        private Slider _masterVolumeSlider;
-        private Slider _musicVolumeSlider;
-        private Slider _sfxVolumeSlider;
+        private ExtendedSlider _masterVolumeSlider;
+        private ExtendedSlider _musicVolumeSlider;
+        private ExtendedSlider _sfxVolumeSlider;
 
         private Toggle _invertPanToggle;
         private Toggle _invertRotateToggle;
         private Toggle _invertZoomToggle;
 
-        private Slider _panSpeedSlider;
-        private Slider _rotateSpeedSlider;
-        private Slider _zoomSpeedSlider;
+        private ExtendedSlider _panSpeedSlider;
+        private ExtendedSlider _rotateSpeedSlider;
+        private ExtendedSlider _zoomSpeedSlider;
 
         public SettingsMenuController() : base("UI/Views/SettingsMenu") { }
 
@@ -24,17 +25,17 @@ namespace UI.Controllers
             base.Init();
             Root.Q<Button>("back-button").clicked += Close;
 
-            _masterVolumeSlider = Root.Q<Slider>("master-volume-slider");
-            _musicVolumeSlider = Root.Q<Slider>("music-volume-slider");
-            _sfxVolumeSlider = Root.Q<Slider>("sfx-volume-slider");
+            _masterVolumeSlider = Root.Q<ExtendedSlider>("master-volume-slider");
+            _musicVolumeSlider = Root.Q<ExtendedSlider>("music-volume-slider");
+            _sfxVolumeSlider = Root.Q<ExtendedSlider>("sfx-volume-slider");
 
             _invertPanToggle = Root.Q<Toggle>("invert-pan-toggle");
             _invertRotateToggle = Root.Q<Toggle>("invert-rotate-toggle");
             _invertZoomToggle = Root.Q<Toggle>("invert-zoom-toggle");
 
-            _panSpeedSlider = Root.Q<Slider>("pan-speed-slider");
-            _rotateSpeedSlider = Root.Q<Slider>("rotate-speed-slider");
-            _zoomSpeedSlider = Root.Q<Slider>("zoom-speed-slider");
+            _panSpeedSlider = Root.Q<ExtendedSlider>("pan-speed-slider");
+            _rotateSpeedSlider = Root.Q<ExtendedSlider>("rotate-speed-slider");
+            _zoomSpeedSlider = Root.Q<ExtendedSlider>("zoom-speed-slider");
 
             var settings = SaveManager.Settings.Value;
             var audioSettings = settings.Audio.Value;
