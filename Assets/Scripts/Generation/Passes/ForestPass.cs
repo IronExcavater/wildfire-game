@@ -43,24 +43,22 @@ namespace Generation.Passes
             for (float y = 0; y < size; y += step)
             for (float x = 0; x < size; x += step)
             {
-                var cellX = chunkWorldPos.x + x / resolution;
-                var cellY = chunkWorldPos.z + y / resolution;
+                var world = new Vector2(chunkWorldPos.x + x / resolution, chunkWorldPos.z + y / resolution);
+                var noise = new Vector2(world.x + offset, world.y + offset);
 
-                var jitterAmount = NormalizedHash(cellX, cellY, offset + 100) * treeJitter * step;
-                var jitterAngle = NormalizedHash(cellX, cellY, offset + 101) * Mathf.PI * 2f;
+                var jitterAmount = StaticNoise(noise.x, noise.y) * treeJitter * step;
+                var jitterAngle = StaticNoise(noise.x, noise.y) * Mathf.PI * 2f;
                 var jitter = new Vector2(Mathf.Cos(jitterAngle), Mathf.Sin(jitterAngle)) * jitterAmount;
 
-                var worldX = chunkWorldPos.x + (x + jitter.x) / resolution;
-                var worldY = chunkWorldPos.z + (y + jitter.y) / resolution;
+                world = new Vector2(
+                    chunkWorldPos.x + (x + jitter.x) / resolution,
+                    chunkWorldPos.z + (y + jitter.y) / resolution);
+                noise = new Vector2(world.x + offset, world.y + offset);
 
-                var height = World.GetHeight(new Vector2(worldX, worldY), chunk.Position, heightmap.Value);
+                var height = World.GetHeight(new Vector2(world.x, world.y), chunk.Position, heightmap.Value);
 
-                // Add noise-based forest patterning (rough transitions)
-                var nx = worldX + offset;
-                var ny = worldY + offset;
-
-                var forestMask = Mathf.PerlinNoise(nx * forestFrequency, ny * forestFrequency);
-                var plainsMask = Mathf.PerlinNoise(nx * plainsFrequency, ny * plainsFrequency);
+                var forestMask = Mathf.PerlinNoise(noise.x * forestFrequency, noise.y * forestFrequency);
+                var plainsMask = Mathf.PerlinNoise(noise.x * plainsFrequency, noise.y * plainsFrequency);
 
                 // Skip tree if in a plains patch
                 if (plainsMask > plainsThreshold)
@@ -71,15 +69,15 @@ namespace Generation.Passes
                 var boosted = Mathf.Pow(valleyFactor, 1.5f) * (1f + forestMask * valleyBoost);
                 var spawnProbability = spawnChance.Lerp(Mathf.Clamp01(boosted));
 
-                float spawnRoll = NormalizedHash(worldX, worldY, offset + 400);
+                var spawnRoll = StaticNoise(noise.x, noise.y);
                 if (spawnRoll > spawnProbability)
                     continue;
 
-                var rotationY = NormalizedHash(cellX, cellY, offset + 200) * 360f;
-                var scale = treeScale.Lerp(NormalizedHash(cellX, cellY, offset + 300));
+                var rotationY = StaticNoise(noise.x, noise.y) * 360f;
+                var scale = treeScale.Lerp(StaticNoise(noise.x, noise.y));
 
                 var entity = new Property<Entity>(new Entity(typeof(TreeObject), chunk));
-                entity.Value.Position.Value = new Vector3(worldX, height, worldY);
+                entity.Value.Position.Value = new Vector3(world.x, height, world.y);
                 entity.Value.Rotation.Value = Quaternion.Euler(0f, rotationY, 0f);
                 entity.Value.Scale.Value = Vector3.one * scale;
 

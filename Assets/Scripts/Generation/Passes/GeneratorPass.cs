@@ -9,22 +9,24 @@ namespace Generation.Passes
     {
         protected int GetNoiseOffset() => WorldGenerator.HashSeed(WorldGenerator.SeedString + GetType().FullName);
 
-        protected float NormalizedHash(float x, float y, int salt = 0)
+        protected float StaticNoise(float x, float y)
         {
-            // Convert float to fixed-point integers to ensure determinism
-            var ix = Mathf.FloorToInt(x * 1000f); // 3 decimal precision
-            var iy = Mathf.FloorToInt(y * 1000f);
-            var hash = HashInts(ix, iy, salt);
-            return (hash & 0x7FFFFFFF) / (float)int.MaxValue;
+            var ix = (ulong)Mathf.FloorToInt(x);
+            var iy = (ulong)Mathf.FloorToInt(y);
+
+            var hash = Mix(ix, iy, (ulong)WorldGenerator.SeedInt);
+            return (hash & 0xFFFFFFFF) / (float)uint.MaxValue;
         }
 
-        private int HashInts(int a, int b, int salt = 0)
+        private ulong Mix(ulong a, ulong b, ulong seed)
         {
-            unchecked
-            {
-                var hash = (uint)((a + salt) * 73856093) ^ (uint)((b + salt) * 19349663);
-                return (int)(hash & 0x7FFFFFFF);
-            }
+            const ulong prime1 = 0xa0761d6478bd642f;
+            const ulong prime2 = 0xe7037ed1a0b428db;
+            var result = (a ^ prime1) * (b ^ prime2);
+            result ^= (result >> 32);
+            result *= (seed ^ prime1);
+            result ^= (result >> 29);
+            return result;
         }
 
         public abstract void Apply(Chunk chunk);

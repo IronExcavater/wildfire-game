@@ -14,18 +14,19 @@ namespace Generation.Passes
         public override void Apply(Chunk chunk)
         {
             var chunkSize = WorldGenerator.ChunkSize;
-            var size = chunkSize * WorldGenerator.Resolution;
+            float resolution = WorldGenerator.Resolution;
+            var size = chunkSize * resolution;
+            var chunkWorldPos = chunk.WorldPosition;
             var heightmap = chunk.GetHeightmap();
-            var arbitraryOffset = GetNoiseOffset();
+            var offset = GetNoiseOffset();
 
             for (var y = 0; y <= size; y++)
             for (var x = 0; x <= size; x++)
             {
-                var nx = chunk.Position.x * size + x + arbitraryOffset;
-                var ny = chunk.Position.y * size + y + arbitraryOffset;
+                var world = new Vector2(chunkWorldPos.x + x / resolution, chunkWorldPos.z + y / resolution);
+                var noise = new Vector2(world.x + offset, world.y + offset);
 
-
-                var ridge = Mathf.PerlinNoise(nx * frequency, ny * frequency);
+                var ridge = Mathf.PerlinNoise(noise.x * frequency, noise.y * frequency);
                 ridge = 1 - Mathf.Abs(2 * ridge - 1);
                 ridge = Mathf.Pow(ridge, sharpness) * weight;
 
