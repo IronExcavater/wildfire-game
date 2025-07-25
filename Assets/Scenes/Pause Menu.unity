@@ -535,12 +535,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rootMenu:
-    rid: 1915427775350046785
+    rid: 2965629625440403521
   references:
     version: 2
     RefIds:
-    - rid: 1915427775350046785
-      type: {class: SettingsMenuController, ns: UI.Controllers, asm: Assembly-CSharp}
+    - rid: 2965629625440403521
+      type: {class: MainMenuControllerController, ns: UI.Controllers, asm: Assembly-CSharp}
       data:
         _asset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807

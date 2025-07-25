@@ -74,7 +74,18 @@ Button:active {
 
 .extended-slider__value {
     position: absolute;
-    top: 90%;
+    top: 25%;
     padding: 0;
     margin: 0;
+}
+
+.extended-slider__low, .extended-slider__high {
+    min-width: 30px;
+    -unity-text-align: middle-center;
+}
+
+.extended-slider .unity-base-slider__dragger {
+    min-width: 30px;
+    padding-left: 5px;
+    padding-right: 5px;
 }
