@@ -26,30 +26,38 @@ namespace Generation
         private World _world = new();
         public static World World => Instance._world;
 
-        private List<GeneratorPass> _passes = new();
-        public static IReadOnlyList<GeneratorPass> Passes => Instance._passes.AsReadOnly();
+        private Dictionary<GenerationStage, List<GeneratorPass>> _passes = new();
+        public static IReadOnlyDictionary<GenerationStage, List<GeneratorPass>> Passes => Instance._passes;
 
         [SerializeField] private GeneratorPasses _generatorPasses;
 
-        public void AddPass(GeneratorPass pass) => _passes.Add(pass);
+        public void AddPass(GenerationStage stage, GeneratorPass pass) => _passes[stage].Add(pass);
 
         protected override void Awake()
         {
             base.Awake();
-            if (_generatorPasses != null) _passes.AddRange(_generatorPasses.passes);
+            if (_generatorPasses != null) _passes = _generatorPasses.passes.Dictionary;
+            Debug.Log(_passes[GenerationStage.Terrain]);
             SeedString = _generatorPasses?.seed ?? "default";
         }
 
-        public static async Task<Chunk> GetChunk(Vector2Int position, IJob parent = null)
+        public static async Task<Chunk> GetChunk(Vector2Int position, IJob parent = null,
+            GenerationStage stage = GenerationStage.Objects)
         {
-            if (!World.Chunks.TryGetValue(position, out var chunk))
+            TryGetChunkReference(position, out var chunk);
+
+            if (chunk == null || !chunk.IsStageComplete(stage))
             {
-                var generateJob = new GenerateChunkJob(position) { Parent = parent };
+                var generateJob = new GenerateChunkJob(position, stage) { Parent = parent };
                 chunk = await JobManager.Enqueue(generateJob);
-                World.Chunks.TryAdd(position, chunk);
             }
 
             return chunk;
+        }
+
+        public static void TryGetChunkReference(Vector2Int position, out Chunk chunk)
+        {
+            World.Chunks.TryGetValue(position, out chunk);
         }
 
         public static int HashSeed(string seed)

@@ -13,18 +13,22 @@ namespace Editor.Drawers
     public class SerializedDictionaryDrawer : PropertyDrawer
     {
         private readonly SerializedDictionaryValidator _validator = new();
-        private readonly Dictionary<int, string> _searches = new();
-        private readonly Dictionary<int, Dictionary<int, bool>> _foldouts = new();
+        private readonly Dictionary<string, string> _searches = new();
+        private readonly Dictionary<string, Dictionary<int, bool>> _foldouts = new();
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if (!IsPropertyValid())
             {
-                EditorGUI.HelpBox(position,$"{fieldInfo.FieldType} must inherit SerializedDictionary<,,> to use [SerializedDictionaryField]!", MessageType.Error);
+                EditorGUI.HelpBox(position,
+                    $"{fieldInfo.FieldType} must inherit SerializedDictionary<,,> to use [SerializedDictionaryField]!",
+                    MessageType.Error);
                 return;
             }
 
+            EditorGUI.BeginProperty(position, label, property);
             BuildLayout(position, property, label, true);
+            EditorGUI.EndProperty();
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -35,25 +39,27 @@ namespace Editor.Drawers
 
         private BoxRect BuildLayout(Rect position, SerializedProperty property, GUIContent label, bool drawLayout = false)
         {
-            var propertyHash = EditorUtils.PropertyHash(property);
+            var path = property.propertyPath;
 
-            _searches.TryAdd(propertyHash, string.Empty);
-            _foldouts.TryAdd(propertyHash, new());
-            var foldouts = _foldouts[propertyHash];
+            _searches.TryAdd(path, string.Empty);
+            _foldouts.TryAdd(path, new());
+
+            var foldouts = _foldouts.GetValueOrDefault(path, new());
+            if (drawLayout) _foldouts[path] = foldouts;
 
             var attr = attribute as SerializedDictionaryFieldAttribute;
             var keyLabel = attr?.KeyLabel ?? "Key";
             var valueLabel = attr?.ValueLabel ?? "Value";
-
 
             var wrapperBox = new BoxRect(position.position, new(position.width, 0));
 
             if (!IsPropertyValid())
             {
                 var errorBox = new BoxRect(wrapperBox, EditorUtils.LineHeight * 2);
-                EditorGUI.HelpBox(errorBox.Rect.Value,
-                    $"{fieldInfo.FieldType} must inherit SerializedDictionary<,,> to use [SerializedDictionaryField]!",
-                    MessageType.Error);
+                if (drawLayout)
+                    EditorGUI.HelpBox(errorBox.Rect.Value,
+                        $"{fieldInfo.FieldType} must inherit SerializedDictionary<,,> to use [SerializedDictionaryField]!",
+                        MessageType.Error);
                 return wrapperBox;
             }
 
@@ -64,11 +70,10 @@ namespace Editor.Drawers
             if (drawLayout)
             {
                 GUI.SetNextControlName("AdvancedTextField");
-                _searches[propertyHash] = EditorGUI.TextField(searchBox.Rect.Value, _searches[propertyHash]);
-                if (string.IsNullOrEmpty(_searches[propertyHash]) && GUI.GetNameOfFocusedControl() != "AdvancedTextField")
+                _searches[path] = EditorGUI.TextField(searchBox.Rect.Value, _searches[path]);
+                if (string.IsNullOrEmpty(_searches[path]) && GUI.GetNameOfFocusedControl() != "AdvancedTextField")
                     EditorGUI.LabelField(searchBox.Rect.Value, "Search... ");
             }
-
 
             var entriesProp = property.FindPropertyRelative("entries");
             var entriesBox = new BoxRect(wrapperBox, 0);
@@ -79,12 +84,11 @@ namespace Editor.Drawers
                 var keyProp = entryProp.FindPropertyRelative("Key");
                 var valueProp = entryProp.FindPropertyRelative("Value");
 
-                var entryHash = $"entry-{i}".GetHashCode();
+                var entryHash = entryProp.propertyPath.GetHashCode();
 
                 _validator.ValidateEntry(property, keyProp, valueProp, out var message, out var messageType);
                 var hasError = !string.IsNullOrEmpty(message);
-                var searchResult = IsSearchResult(property, keyProp, valueProp);
-
+                var searchResult = IsSearchResult(_searches[path], keyProp, valueProp);
 
                 var entryBox = new BoxRect(entriesBox)
                 {
@@ -95,17 +99,14 @@ namespace Editor.Drawers
 
                 foldouts.TryAdd(entryHash, true);
                 var foldoutBox = searchResult ? new BoxRect(entryBox) : null;
-                if (drawLayout)
-                {
-                    if (foldoutBox != null) foldouts[entryHash] =
-                        EditorGUI.Foldout(foldoutBox.Rect.Value, foldouts[entryHash], GUIContent.none);
-                }
-                var isExpanded = foldouts[entryHash];
+                if (drawLayout && foldoutBox != null)
+                    foldouts[entryHash] = EditorGUI.Foldout(foldoutBox.Rect.Value, foldouts[entryHash], GUIContent.none);
 
+                var isExpanded = foldouts[entryHash];
                 var keyBox = searchResult ? new BoxRect(foldoutBox, keyProp) : null;
                 var valueBox = isExpanded && searchResult ? new BoxRect(foldoutBox, valueProp)
                 {
-                    Padding = { Value = new BoxInsets(left:EditorUtils.Indent) }
+                    Padding = { Value = new BoxInsets(left: EditorUtils.Indent) }
                 } : null;
 
                 if (drawLayout)
@@ -143,16 +144,14 @@ namespace Editor.Drawers
 
                 if (GUI.Button(expandAllBox.Rect.Value, "v") && entriesProp.arraySize > 0)
                 {
-                    var keys = new List<int>(_foldouts[propertyHash].Keys);
-                    foreach (var key in keys)
-                        _foldouts[propertyHash][key] = true;
+                    foreach (var key in foldouts.Keys)
+                        foldouts[key] = true;
                 }
 
                 if (GUI.Button(collapseAllBox.Rect.Value, "ʌ") && entriesProp.arraySize > 0)
                 {
-                    var keys = new List<int>(_foldouts[propertyHash].Keys);
-                    foreach (var key in keys)
-                        _foldouts[propertyHash][key] = false;
+                    foreach (var key in foldouts.Keys)
+                        foldouts[key] = false;
                 }
             }
 
@@ -171,15 +170,14 @@ namespace Editor.Drawers
             return false;
         }
 
-        private bool IsSearchResult(SerializedProperty property, SerializedProperty keyProperty, SerializedProperty valueProperty)
+        private bool IsSearchResult(string search, SerializedProperty keyProperty, SerializedProperty valueProperty)
         {
-            var propertyHash = EditorUtils.PropertyHash(property);
             var keyString = EditorUtils.GetSearchableString(keyProperty);
             var valueString = EditorUtils.GetSearchableString(valueProperty);
 
-            return !(!string.IsNullOrEmpty(_searches[propertyHash]) &&
-                   !keyString.Contains(_searches[propertyHash], StringComparison.CurrentCultureIgnoreCase) &&
-                   !valueString.Contains(_searches[propertyHash], StringComparison.CurrentCultureIgnoreCase));
+            return string.IsNullOrEmpty(search) ||
+                   keyString.Contains(search, StringComparison.CurrentCultureIgnoreCase) ||
+                   valueString.Contains(search, StringComparison.CurrentCultureIgnoreCase);
         }
     }
 }

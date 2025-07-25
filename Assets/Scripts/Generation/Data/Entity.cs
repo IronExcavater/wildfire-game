@@ -72,8 +72,12 @@ namespace Generation.Data
 
         public void Dispose()
         {
-            Chunk.Value = null;
-            Type.Value = null;
+            Chunk.ClearListeners();
+            Position.ClearListeners();
+            Rotation.ClearListeners();
+            Scale.ClearListeners();
+            Type.ClearListeners();
+            Properties.ClearListeners();
             Properties.Clear();
         }
     }

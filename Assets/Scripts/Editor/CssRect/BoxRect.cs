@@ -8,7 +8,9 @@ namespace Editor.CssRect
 {
     public class BoxRect : IObservable<BoxRect, ValueChange<BoxRect>>, IComparable<BoxRect>
     {
-        public Guid Id { get; private set; } = Guid.NewGuid();
+        private static int _globalIndexer;
+
+        public readonly int OrderIndex;
         public readonly Property<BoxRect> Parent = new(observeInnerValue: false);
         public readonly ObservableList<BoxRect> Children = new();
         public readonly Property<SerializedProperty> Property = new();
@@ -40,6 +42,7 @@ namespace Editor.CssRect
 
         public BoxRect(Vector2 position, Vector2 minSize, SerializedProperty property = null)
         {
+            OrderIndex = _globalIndexer++;
             InitializeListeners();
             ContainerPosition.Value = position;
             Property.Value = property;
@@ -49,6 +52,7 @@ namespace Editor.CssRect
 
         public BoxRect(BoxRect parent, float? height = null, float? width = null, Vector2? minSize = null)
         {
+            OrderIndex = _globalIndexer++;
             InitializeListeners();
             BoundsSize.Value = new Vector2(
                 width ?? parent.RectSize.Value.x,
@@ -60,6 +64,7 @@ namespace Editor.CssRect
 
         public BoxRect(BoxRect parent, SerializedProperty property, float? width = null, Vector2? minSize = null)
         {
+            OrderIndex = _globalIndexer++;
             InitializeListeners();
             BoundsSize.Value = new Vector2(
                 width ?? parent.RectSize.Value.x,
@@ -238,6 +243,6 @@ namespace Editor.CssRect
             return false;
         }
 
-        public int CompareTo(BoxRect other) => Id.CompareTo(other.Id);
+        public int CompareTo(BoxRect other) => OrderIndex.CompareTo(other.OrderIndex);
     }
 }

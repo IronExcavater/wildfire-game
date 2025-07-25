@@ -2,10 +2,13 @@
 using UnityEditor;
 #endif
 
+using System;
 using System.Collections.Generic;
 using Generation.Passes;
 using UnityEngine;
 using Utilities.Attributes;
+using Utilities.Serializables;
+using Random = UnityEngine.Random;
 
 namespace Generation
 {
@@ -13,7 +16,7 @@ namespace Generation
     public class GeneratorPasses : ScriptableObject
     {
         [SerializeField] public string seed;
-        [SerializeReference, PolymorphicField] public List<GeneratorPass> passes = new();
+        [SerializedDictionaryField] public SerializedGenerationStageDictionary passes = new();
 
         #if UNITY_EDITOR
         private const float DebounceTime = 0.5f;

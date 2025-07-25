@@ -98,6 +98,11 @@ namespace Utilities.Observables
             _listeners.Remove(listener);
         }
 
+        public void ClearListeners()
+        {
+            _listeners.Clear();
+        }
+
         protected void NotifyListeners(TChange change)
         {
             foreach (var listener in _listeners.ToArray()) // ← safe copy

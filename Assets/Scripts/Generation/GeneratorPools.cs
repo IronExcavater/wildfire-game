@@ -9,10 +9,5 @@ namespace Generation
     {
         [SerializedDictionaryField(KeyLabel = "Monobehaviour", ValueLabel = "Prefabs")]
         public SerializedObjectPoolDictionary pools = new();
-
-        private void OnEnable()
-        {
-            pools.Initialize();
-        }
     }
 }

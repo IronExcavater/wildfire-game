@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Generation.Data;
+using Generation.Jobs;
 using UnityEngine;
 
 namespace Generation.Passes
@@ -11,7 +13,7 @@ namespace Generation.Passes
         [Range(0, 10f)] public float depth = 5f;
         [Range(0.01f, 1f)] public float width = 0.1f;
 
-        public override void Apply(Chunk chunk)
+        public override Task Apply(Chunk chunk, IJob job)
         {
             var chunkSize = WorldGenerator.ChunkSize;
             var size = chunkSize * WorldGenerator.Resolution;
@@ -33,6 +35,8 @@ namespace Generation.Passes
                     heightmap.Value[x, y] -= carve;
                 }
             }
+
+            return Task.CompletedTask;
         }
     }
 }
