@@ -55,22 +55,18 @@ namespace Utilities.Observables
 
     public readonly struct DictionaryChange<TKey, TValue> : IChange<TValue>
     {
-        private readonly IReadOnlyDictionary<TKey, TValue> _dictionary;
         public readonly DictionaryChangeType Type;
         public readonly TKey Key;
         public readonly TValue OldValue;
         public readonly TValue NewValue;
 
-        public DictionaryChange(Dictionary<TKey, TValue> dictionary, DictionaryChangeType type, TKey key = default,
+        public DictionaryChange(DictionaryChangeType type, TKey key = default,
             TValue oldValue = default, TValue newValue = default)
         {
-            _dictionary = new Dictionary<TKey, TValue>(dictionary);
             Type = type;
             Key = key;
             OldValue = oldValue;
             NewValue = newValue;
         }
-
-        public IReadOnlyDictionary<TKey, TValue> GetDictionary => _dictionary;
     }
 }

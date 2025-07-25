@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns="UnityEngine.UIElements">
+    <ui:VisualElement name="menu-container">
+        <ui:Label class="title" text="Main Menu" />
+        <ui:Button name="start-button" text="Start" />
+        <ui:Button name="settings-button" text="Settings" />
+        <ui:Button name="credits-button" text="Credits" />
+        <ui:Button name="quit-button" text="Quit" />
+    </ui:VisualElement>
+    <ui:VisualElement name="submenu-container" />
+</ui:UXML>

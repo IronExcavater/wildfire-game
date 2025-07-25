@@ -4,8 +4,9 @@ using Utilities.Observables;
 
 namespace Generation.Data
 {
-    public class Entity : IDisposable, IObservable<Entity, ValueChange<Entity>>
+    public class Entity : IDisposable, IObservable<Entity, ValueChange<Entity>>, IComparable<Entity>
     {
+        public Guid Id { get; private set; }
         public readonly Property<Chunk> Chunk = new();
         public readonly Property<Vector3> Position = new();
         public readonly Property<Quaternion> Rotation = new();
@@ -14,22 +15,27 @@ namespace Generation.Data
         public readonly ObservableDictionary<string, IProperty> Properties = new();
 
         public event Action<ValueChange<Entity>> OnChanged;
+        public void InvokeOnChanged() => OnChanged?.Invoke(new ValueChange<Entity>(this, this));
 
-        public Entity(Type type, Chunk chunk, Vector3 position = default)
+        public Entity(Guid id, Type type, Chunk chunk)
         {
             InitializeListeners();
+            Id = id;
             Type.Value = type;
             Chunk.Value = chunk;
-            Position.Value = position;
         }
+        public Entity(Type type, Chunk chunk)
+            : this(Guid.NewGuid(), type, chunk) { }
 
-        public Entity(Type type, Chunk chunk, Vector3 position = default, params (string key, IProperty value)[] properties)
-            : this(type, chunk, position)
+        public Entity(Guid id, Type type, Chunk chunk, params (string key, IProperty value)[] properties)
+            : this(id, type, chunk)
         {
             InitializeListeners();
             foreach (var (key, value) in properties)
                 Properties[key] = value;
         }
+        public Entity(Type type, Chunk chunk, params (string key, IProperty value)[] properties)
+            : this(Guid.NewGuid(), type, chunk, properties) { }
 
         private void InitializeListeners()
         {
@@ -37,11 +43,6 @@ namespace Generation.Data
             Position.AddListener((_, _) => InvokeOnChanged());
             Type.AddListener((_, _) => InvokeOnChanged());
             Properties.AddListener((_, _) => InvokeOnChanged());
-        }
-
-        private void InvokeOnChanged()
-        {
-            OnChanged?.Invoke(new ValueChange<Entity>(this, this));
         }
 
         public void SetProperty<T>(string key, Property<T> property)
@@ -61,6 +62,8 @@ namespace Generation.Data
                 return casted;
             return null;
         }
+
+        public int CompareTo(Entity other) => Id.CompareTo(other.Id);
 
         public override string ToString()
         {

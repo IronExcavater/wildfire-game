@@ -1,0 +1,7 @@
+#menu-container {
+    max-height: 100%;
+}
+
+button {
+    border-radius: 5px;
+}

@@ -9,5 +9,6 @@ namespace Utilities.Observables
         /// Invoke event when inner values of object change.
         /// </summary>
         event Action<TC> OnChanged;
+        public void InvokeOnChanged();
     }
 }

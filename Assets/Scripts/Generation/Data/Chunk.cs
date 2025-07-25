@@ -16,6 +16,7 @@ namespace Generation.Data
         public readonly ObservableList<Property<Entity>> Entities = new();
 
         public event Action<ValueChange<Chunk>> OnChanged;
+        public void InvokeOnChanged() => OnChanged?.Invoke(new ValueChange<Chunk>(this, this));
 
         private readonly object _entityLock = new();
 
@@ -29,11 +30,6 @@ namespace Generation.Data
         private void InitializeListeners()
         {
             Entities.AddListener((_, _) => InvokeOnChanged());
-        }
-
-        private void InvokeOnChanged()
-        {
-            OnChanged?.Invoke(new ValueChange<Chunk>(this, this));
         }
 
         public void AddEntity(Property<Entity> entity)

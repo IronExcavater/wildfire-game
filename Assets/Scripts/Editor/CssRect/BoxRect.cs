@@ -6,8 +6,9 @@ using Utilities.Observables;
 
 namespace Editor.CssRect
 {
-    public class BoxRect : IObservable<BoxRect, ValueChange<BoxRect>>
+    public class BoxRect : IObservable<BoxRect, ValueChange<BoxRect>>, IComparable<BoxRect>
     {
+        public Guid Id { get; private set; } = Guid.NewGuid();
         public readonly Property<BoxRect> Parent = new(observeInnerValue: false);
         public readonly ObservableList<BoxRect> Children = new();
         public readonly Property<SerializedProperty> Property = new();
@@ -35,6 +36,7 @@ namespace Editor.CssRect
         public readonly Property<BoxVec2> Offset = new();
 
         public event Action<ValueChange<BoxRect>> OnChanged;
+        public void InvokeOnChanged() => OnChanged?.Invoke(new ValueChange<BoxRect>(this, this));
 
         public BoxRect(Vector2 position, Vector2 minSize, SerializedProperty property = null)
         {
@@ -153,11 +155,6 @@ namespace Editor.CssRect
             RectSize.AddListener(UpdateRectListener);
         }
 
-        private void InvokeOnChanged()
-        {
-            OnChanged?.Invoke(new ValueChange<BoxRect>(this, this));
-        }
-
         private void UpdateContainerFromParentListener(PropertyBase<Vector2, Vector2, ValueChange<Vector2>> property,
             ValueChange<Vector2> change)
         {
@@ -240,5 +237,7 @@ namespace Editor.CssRect
             Property.Value = null;
             return false;
         }
+
+        public int CompareTo(BoxRect other) => Id.CompareTo(other.Id);
     }
 }

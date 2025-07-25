@@ -24,10 +24,16 @@ namespace Editor.Drawers
 
             EditorGUI.BeginProperty(position, label, property);
 
-            var dropdownBox = new BoxRect(position.position, new(position.width, EditorGUIUtility.singleLineHeight))
+            var labelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 100;
+            var labelRect = new Rect(position.x, position.y, EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight);
+            EditorGUI.PrefixLabel(labelRect, label);
+            var dropdownBox = new BoxRect(position.position + new Vector2(EditorGUIUtility.labelWidth, 0),
+                new(position.width - EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight))
             {
                 Padding = { Value = new BoxInsets(left: 6) }
             };
+            EditorGUIUtility.labelWidth = labelWidth;
 
             var baseType = fieldInfo.FieldType.GetBaseType();
 
@@ -37,17 +43,23 @@ namespace Editor.Drawers
                 _typeCaches[baseType] = subtypes;
             }
 
-            var typeNames = subtypes.Select(t => t.Name).ToList();
+            var typeNames = new List<string> { "None" };
+            typeNames.AddRange(subtypes.Select(t => t.Name));
 
-            var currentType = property.managedReferenceValue?.GetType() ?? subtypes.First();
-            var currentIndex = subtypes.FindIndex(t => t == currentType);
+            var currentType = property.managedReferenceValue?.GetType();
+            var currentIndex = currentType != null ? subtypes.FindIndex(t => t == currentType) + 1 : 0;
 
             var newIndex = EditorGUI.Popup(dropdownBox.Rect.Value, currentIndex, typeNames.ToArray());
             if (newIndex != currentIndex)
             {
-                var newType = subtypes[newIndex];
-                var instance = Activator.CreateInstance(newType);
-                property.managedReferenceValue = instance;
+                if (newIndex == 0)
+                    property.managedReferenceValue = null;
+                else
+                {
+                    var newType = subtypes[newIndex - 1];
+                    var instance = Activator.CreateInstance(newType);
+                    property.managedReferenceValue = instance;
+                }
             }
 
             if (property.managedReferenceValue != null)
