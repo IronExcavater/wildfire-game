@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Generation.Jobs;
 using Generation.Objects;
+using Generation.Passes;
 using UnityEngine;
 using Utilities;
 using Utilities.Observables;
@@ -113,7 +114,7 @@ namespace Generation.Data
                 localY += mapSize;
             }
 
-            var chunk = await WorldGenerator.GetChunk(new Vector2Int(chunkX, chunkY), parent);
+            var chunk = await WorldGenerator.GetChunk(new Vector2Int(chunkX, chunkY), parent, GenerationStage.Terrain);
             if (!chunk.TryGetEntityOfType(typeof(TerrainObject), out var terrain)) return 0;
             if (!terrain.Value.TryGetProperty("Heightmap", out Property<float[,]> heightmap)) return 0;
             return heightmap.Value[localX, localY];

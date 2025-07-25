@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Generation.Data;
+using Generation.Jobs;
 using Generation.Objects;
 using UnityEngine;
 using Utilities;
@@ -16,27 +18,26 @@ namespace Generation.Passes
         [MinMax(0f, 1f, true)] public MinMax spawnChance = new(0.2f, 0.9f);
 
         [Header("Plains Exclusion")]
-        [Range(0.001f, 0.05f)] public float plainsFrequency = 0.005f;
-        [Range(0f, 1f)] public float plainsThreshold = 0.6f;
+        [Range(0.001f, 0.05f)] public float plainsFrequency = 0.03f;
+        [Range(0f, 1f)] public float plainsThreshold = 0.7f;
 
         [Header("Elevation Influence")]
         [MinMax(0f, 30f)] public MinMax elevationFactor = new(10, 20);
         [Range(0f, 1f)] public float valleyBoost = 0.5f;
 
         [Header("Tree Layout")]
-        [Range(1, 16)] public int treeSpacing = 4;
-        [Range(0f, 1f)] public float treeJitter = 0.2f;
+        [Range(1, 16)] public int treeSpacing = 3;
+        [Range(0f, 1f)] public float treeJitter = 0.5f;
 
         [Header("Tree Variation")]
         [MinMax(0.5f, 2f)] public MinMax treeScale = new(0.6f, 1.4f);
 
-        public override void Apply(Chunk chunk)
+        public override async Task Apply(Chunk chunk, IJob job)
         {
             var chunkSize = WorldGenerator.ChunkSize;
             var resolution = WorldGenerator.Resolution;
             var size = chunkSize * resolution;
             var chunkWorldPos = chunk.WorldPosition;
-            var heightmap = chunk.GetHeightmap();
             var offset = GetNoiseOffset();
             var step = treeSpacing * resolution;
 
@@ -46,16 +47,14 @@ namespace Generation.Passes
                 var world = new Vector2(chunkWorldPos.x + x / resolution, chunkWorldPos.z + y / resolution);
                 var noise = new Vector2(world.x + offset, world.y + offset);
 
-                var jitterAmount = StaticNoise(noise.x, noise.y) * treeJitter * step;
-                var jitterAngle = StaticNoise(noise.x, noise.y) * Mathf.PI * 2f;
-                var jitter = new Vector2(Mathf.Cos(jitterAngle), Mathf.Sin(jitterAngle)) * jitterAmount;
+                var jitter = GetNoiseJitter(noise.x, noise.y, treeJitter * step);
 
                 world = new Vector2(
                     chunkWorldPos.x + (x + jitter.x) / resolution,
                     chunkWorldPos.z + (y + jitter.y) / resolution);
                 noise = new Vector2(world.x + offset, world.y + offset);
 
-                var height = World.GetHeight(new Vector2(world.x, world.y), chunk.Position, heightmap.Value);
+                var height = await chunk.World.GetHeight(world, job);
 
                 var forestMask = Mathf.PerlinNoise(noise.x * forestFrequency, noise.y * forestFrequency);
                 var plainsMask = Mathf.PerlinNoise(noise.x * plainsFrequency, noise.y * plainsFrequency);

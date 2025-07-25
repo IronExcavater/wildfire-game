@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Generation.Data;
+using Generation.Jobs;
 using UnityEngine;
 
 namespace Generation.Passes
@@ -11,7 +13,7 @@ namespace Generation.Passes
         [Range(0.001f, 0.05f)] public float frequency = 0.005f;
         [Range(1, 4)] public float sharpness = 2f;
 
-        public override void Apply(Chunk chunk)
+        public override Task Apply(Chunk chunk, IJob job)
         {
             var chunkSize = WorldGenerator.ChunkSize;
             float resolution = WorldGenerator.Resolution;
@@ -32,6 +34,8 @@ namespace Generation.Passes
 
                 heightmap.Value[x, y] += ridge;
             }
+
+            return Task.CompletedTask;
         }
     }
 }

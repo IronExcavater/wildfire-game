@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Generation.Data;
+using Generation.Jobs;
 using UnityEngine;
 
 namespace Generation.Passes
@@ -7,7 +9,11 @@ namespace Generation.Passes
     [Serializable]
     public abstract class GeneratorPass
     {
-        protected int GetNoiseOffset() => WorldGenerator.HashSeed(WorldGenerator.SeedString + GetType().FullName);
+        protected int GetNoiseOffset()
+        {
+            var raw = WorldGenerator.HashSeed(WorldGenerator.SeedString + GetType().FullName);
+            return raw % 100_000_000;
+        }
 
         protected float StaticNoise(float x, float y)
         {
@@ -29,6 +35,13 @@ namespace Generation.Passes
             return result;
         }
 
-        public abstract void Apply(Chunk chunk);
+        protected Vector2 GetNoiseJitter(float x, float y, float amount)
+        {
+            var jitterAmount = StaticNoise(x, y) * amount;
+            var jitterAngle = StaticNoise(x, y) * Mathf.PI * 2f;
+            return new Vector2(Mathf.Cos(jitterAngle), Mathf.Sin(jitterAngle)) * jitterAmount;
+        }
+
+        public abstract Task Apply(Chunk chunk, IJob job);
     }
 }

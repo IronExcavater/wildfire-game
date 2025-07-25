@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Generation.Objects;
+using Generation.Passes;
 using UnityEngine;
 using Utilities.Observables;
 
@@ -9,15 +10,19 @@ namespace Generation.Data
 {
     public sealed class Chunk : IDisposable, IObservable<Chunk, ValueChange<Chunk>>
     {
+        public readonly World World;
         public Vector2Int Position;
         public Vector3 WorldPosition => new(Position.x * WorldGenerator.ChunkSize, 0, Position.y * WorldGenerator.ChunkSize);
         public readonly ObservableList<Property<Entity>> Entities = new();
 
         public event Action<ValueChange<Chunk>> OnChanged;
 
-        public Chunk(Vector2Int position)
+        private readonly object _entityLock = new();
+
+        public Chunk(World world, Vector2Int position)
         {
             InitializeListeners();
+            World = world;
             Position = position;
         }
 
@@ -33,29 +38,35 @@ namespace Generation.Data
 
         public void AddEntity(Property<Entity> entity)
         {
-            Entities.Add(entity);
+            lock (_entityLock) Entities.Add(entity);
         }
 
         public List<Property<Entity>> GetEntitiesOfType(Type type)
         {
-            return Entities.ReadOnly.Where(entity => entity.Value.Type.Value == type).ToList();
+            lock (_entityLock) return Entities.ReadOnly.Where(entity => entity.Value.Type.Value == type).ToList();
         }
 
         public Property<Entity> GetEntityOfType(Type type)
         {
-            return Entities.ReadOnly.FirstOrDefault(entity => entity.Value.Type.Value == type);
+            lock (_entityLock) return Entities.ReadOnly.FirstOrDefault(entity => entity.Value.Type.Value == type);
         }
 
         public bool TryGetEntitiesOfType(Type type, out List<Property<Entity>> entities)
         {
-            entities = Entities.ReadOnly.Where(entity => entity.Value.Type.Value == type).ToList();
-            return entities.Count > 0;
+            lock (_entityLock)
+            {
+                entities = Entities.ReadOnly.Where(entity => entity.Value.Type.Value == type).ToList();
+                return entities.Count > 0;
+            }
         }
 
         public bool TryGetEntityOfType(Type type, out Property<Entity> entity)
         {
-            entity = Entities.ReadOnly.FirstOrDefault(entity => entity.Value.Type.Value == type);
-            return entity != null;
+            lock (_entityLock)
+            {
+                entity = Entities.ReadOnly.FirstOrDefault(entity => entity.Value.Type.Value == type);
+                return entity != null;
+            }
         }
 
         public Property<float[,]> GetHeightmap()
@@ -81,12 +92,26 @@ namespace Generation.Data
             return heightmap;
         }
 
+        private GenerationStage _completedStage = GenerationStage.None;
+        public GenerationStage CompletedStage => _completedStage;
+
+        public bool IsStageComplete(GenerationStage stage) => _completedStage >= stage;
+
+        public void MarkStageComplete(GenerationStage stage)
+        {
+            if (stage > _completedStage) _completedStage = stage;
+        }
+
         public void Dispose()
         {
-            _ = WorldLoader.RemoveChunk(Position);
-            foreach (var entity in Entities)
-                entity.Value.Dispose();
-            Entities.Clear();
+            lock (_entityLock)
+            {
+                _ = WorldLoader.RemoveChunk(Position);
+                foreach (var entity in Entities)
+                    entity.Value.Dispose();
+                Entities.ClearListeners();
+                Entities.Clear();
+            }
         }
     }
 }

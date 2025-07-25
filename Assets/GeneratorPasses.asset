@@ -14,21 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   seed: 65008cd1302d4
   passes:
-  - rid: 1915427534221344837
-  - rid: 1915427559924826246
-  - rid: 2965629625440403518
+    entries:
+    - Key: 1
+      Value:
+      - rid: 1915427888439754824
+    - Key: 2
+      Value:
+      - rid: 1915427888439754826
+      - rid: 1915427888439754827
   references:
     version: 2
     RefIds:
-    - rid: 1915427534221344837
+    - rid: 1915427888439754824
       type: {class: HillPass, ns: Generation.Passes, asm: Assembly-CSharp}
       data:
         amplitude: 15
-        frequency: 0.005
+        frequency: 0.01
         octaves: 8
         lacunarity: 2
         persistence: 0.5
-    - rid: 1915427559924826246
+    - rid: 1915427888439754826
       type: {class: ForestPass, ns: Generation.Passes, asm: Assembly-CSharp}
       data:
         forestFrequency: 0.01
@@ -41,15 +46,15 @@ MonoBehaviour:
           min: 10
           max: 20
         valleyBoost: 0.5
-        treeSpacing: 2
-        treeJitter: 0.8
+        treeSpacing: 3
+        treeJitter: 0.5
         treeScale:
-          min: 0.8
-          max: 1.2
-    - rid: 2965629625440403518
+          min: 0.6
+          max: 1.4
+    - rid: 1915427888439754827
       type: {class: TownPass, ns: Generation.Passes, asm: Assembly-CSharp}
       data:
-        cellSize: 512
-        frequency: 0.005
-        threshold: 0.6
-        maxJitter: 0.2
+        frequency: 0.015
+        threshold: 0.9
+        buildingSpacing: 4
+        buildingJitter: 0.5
