@@ -15,7 +15,7 @@ namespace Generation.Passes
             return raw % 100_000_000;
         }
 
-        protected float StaticNoise(float x, float y)
+        protected static float StaticNoise(float x, float y)
         {
             var ix = (ulong)Mathf.FloorToInt(x);
             var iy = (ulong)Mathf.FloorToInt(y);
@@ -24,7 +24,7 @@ namespace Generation.Passes
             return (hash & 0xFFFFFFFF) / (float)uint.MaxValue;
         }
 
-        private ulong Mix(ulong a, ulong b, ulong seed)
+        private static ulong Mix(ulong a, ulong b, ulong seed)
         {
             const ulong prime1 = 0xa0761d6478bd642f;
             const ulong prime2 = 0xe7037ed1a0b428db;
@@ -35,7 +35,7 @@ namespace Generation.Passes
             return result;
         }
 
-        protected Vector2 GetNoiseJitter(float x, float y, float amount)
+        protected static Vector2 GetNoiseJitter(float x, float y, float amount)
         {
             var jitterAmount = StaticNoise(x, y) * amount;
             var jitterAngle = StaticNoise(x, y) * Mathf.PI * 2f;

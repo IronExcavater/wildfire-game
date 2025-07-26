@@ -41,6 +41,11 @@ namespace Generation
             SeedString = _generatorPasses?.seed ?? "default";
         }
 
+        public static Vector2Int WorldToChunk(Vector2 world) =>
+            new(Mathf.FloorToInt(world.x / ChunkSize), Mathf.FloorToInt(world.y / ChunkSize));
+        public static Vector2 ChunkToWorld(Vector2Int chunk) =>
+            new(chunk.x * ChunkSize, chunk.y * ChunkSize);
+
         public static async Task<Chunk> GetChunk(Vector2Int position, IJob parent = null,
             GenerationStage stage = GenerationStage.Objects)
         {
@@ -55,9 +60,9 @@ namespace Generation
             return chunk;
         }
 
-        public static void TryGetChunkReference(Vector2Int position, out Chunk chunk)
+        public static bool TryGetChunkReference(Vector2Int position, out Chunk chunk)
         {
-            World.Chunks.TryGetValue(position, out chunk);
+            return World.Chunks.TryGetValue(position, out chunk);
         }
 
         public static int HashSeed(string seed)

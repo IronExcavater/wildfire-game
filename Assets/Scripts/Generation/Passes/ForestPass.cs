@@ -44,14 +44,12 @@ namespace Generation.Passes
             for (float y = 0; y < size; y += step)
             for (float x = 0; x < size; x += step)
             {
-                var world = new Vector2(chunkWorldPos.x + x / resolution, chunkWorldPos.z + y / resolution);
-                var noise = new Vector2(world.x + offset, world.y + offset);
+                var world = chunkWorldPos + new Vector2(x, y) / resolution;
+                var noise = world.AddScalar(offset);
 
                 var jitter = GetNoiseJitter(noise.x, noise.y, treeJitter * step);
 
-                world = new Vector2(
-                    chunkWorldPos.x + (x + jitter.x) / resolution,
-                    chunkWorldPos.z + (y + jitter.y) / resolution);
+                world = chunkWorldPos + (new Vector2(x, y) + jitter / resolution);
                 noise = new Vector2(world.x + offset, world.y + offset);
 
                 var height = await WorldGenerator.World.GetHeight(world, job);

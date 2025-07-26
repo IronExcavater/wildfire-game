@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Generation.Data;
 using Generation.Jobs;
 using UnityEngine;
+using Utilities;
 
 namespace Generation.Passes
 {
@@ -25,8 +26,8 @@ namespace Generation.Passes
             for (var y = 0; y <= size; y++)
             for (var x = 0; x <= size; x++)
             {
-                var world = new Vector2(chunkWorldPos.x + x / resolution, chunkWorldPos.z + y / resolution);
-                var noise = new Vector2(world.x + offset, world.y + offset);
+                var world = chunkWorldPos + new Vector2(x, y) / resolution;
+                var noise = world.AddScalar(offset);
 
                 var ridge = Mathf.PerlinNoise(noise.x * frequency, noise.y * frequency);
                 ridge = 1 - Mathf.Abs(2 * ridge - 1);

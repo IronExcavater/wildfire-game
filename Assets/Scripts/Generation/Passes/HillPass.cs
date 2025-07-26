@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Generation.Data;
 using Generation.Jobs;
 using UnityEngine;
+using Utilities;
 
 namespace Generation.Passes
 {
@@ -32,8 +33,8 @@ namespace Generation.Passes
 
                 for (var i = 0; i < octaves; i++)
                 {
-                    var world = new Vector2(chunkWorldPos.x + x / resolution, chunkWorldPos.z + y / resolution);
-                    var noise = new Vector2(world.x + offset, world.y + offset);
+                    var world = chunkWorldPos + new Vector2(x, y) / resolution;
+                    var noise = world.AddScalar(offset);
 
                     var height = Mathf.PerlinNoise(noise.x * freq, noise.y * freq) * amp;
                     heightmap.Value[x, y] += height;

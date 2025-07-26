@@ -11,7 +11,8 @@ namespace Generation.Data
     public sealed class Chunk : IDisposable, IObservable<Chunk, ValueChange<Chunk>>
     {
         public Vector2Int Position;
-        public Vector3 WorldPosition => new(Position.x * WorldGenerator.ChunkSize, 0, Position.y * WorldGenerator.ChunkSize);
+        public Vector2 WorldPosition => WorldGenerator.ChunkToWorld(Position);
+
         public readonly ObservableList<Property<Entity>> Entities = new();
 
         public event Action<ValueChange<Chunk>> OnChanged;
@@ -35,30 +36,20 @@ namespace Generation.Data
             lock (_entityLock) Entities.Add(entity);
         }
 
-        public List<Property<Entity>> GetEntitiesOfType(Type type)
-        {
-            lock (_entityLock) return Entities.ReadOnly.Where(entity => entity.Value.Type.Value == type).ToList();
-        }
-
-        public Property<Entity> GetEntityOfType(Type type)
-        {
-            lock (_entityLock) return Entities.ReadOnly.FirstOrDefault(entity => entity.Value.Type.Value == type);
-        }
-
-        public bool TryGetEntitiesOfType(Type type, out List<Property<Entity>> entities)
+        public bool TryGetEntitiesOfType<T>(out List<Property<Entity>> entities)
         {
             lock (_entityLock)
             {
-                entities = Entities.ReadOnly.Where(entity => entity.Value.Type.Value == type).ToList();
+                entities = Entities.ReadOnly.Where(entity => entity.Value.Type.Value == typeof(T)).ToList();
                 return entities.Count > 0;
             }
         }
 
-        public bool TryGetEntityOfType(Type type, out Property<Entity> entity)
+        public bool TryGetEntityOfType<T>(out Property<Entity> entity) where T : DataObject<Entity>
         {
             lock (_entityLock)
             {
-                entity = Entities.ReadOnly.FirstOrDefault(entity => entity.Value.Type.Value == type);
+                entity = Entities.ReadOnly.FirstOrDefault(entity => entity.Value.Type.Value == typeof(T));
                 return entity != null;
             }
         }
@@ -68,7 +59,7 @@ namespace Generation.Data
             var chunkSize = WorldGenerator.ChunkSize;
             var size = chunkSize * WorldGenerator.Resolution;
 
-            if (!TryGetEntityOfType(typeof(TerrainObject), out var terrain))
+            if (!TryGetEntityOfType<TerrainObject>(out var terrain))
             {
                 terrain = new Property<Entity>(new Entity(typeof(TerrainObject), this));
                 terrain.Value.Position.Value = WorldPosition;

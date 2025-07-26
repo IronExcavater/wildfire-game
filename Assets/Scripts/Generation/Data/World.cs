@@ -115,7 +115,7 @@ namespace Generation.Data
             }
 
             var chunk = await WorldGenerator.GetChunk(new Vector2Int(chunkX, chunkY), parent, GenerationStage.Terrain);
-            if (!chunk.TryGetEntityOfType(typeof(TerrainObject), out var terrain)) return 0;
+            if (!chunk.TryGetEntityOfType<TerrainObject>(out var terrain)) return 0;
             if (!terrain.Value.TryGetProperty("Heightmap", out Property<float[,]> heightmap)) return 0;
             return heightmap.Value[localX, localY];
         }
