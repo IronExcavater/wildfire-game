@@ -54,7 +54,7 @@ namespace Generation.Passes
                     chunkWorldPos.z + (y + jitter.y) / resolution);
                 noise = new Vector2(world.x + offset, world.y + offset);
 
-                var height = await chunk.World.GetHeight(world, job);
+                var height = await WorldGenerator.World.GetHeight(world, job);
 
                 var forestMask = Mathf.PerlinNoise(noise.x * forestFrequency, noise.y * forestFrequency);
                 var plainsMask = Mathf.PerlinNoise(noise.x * plainsFrequency, noise.y * plainsFrequency);

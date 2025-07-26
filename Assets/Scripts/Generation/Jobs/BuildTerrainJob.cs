@@ -22,7 +22,12 @@ namespace Generation.Jobs
 
         public override async Task Start()
         {
-            var instance = (TerrainObject)WorldLoader.GetInstanceOfTypeAtPosition(Position, typeof(TerrainObject));
+            if (!WorldLoader.TryGetInstanceOfTypeAtPosition(Position, out TerrainObject instance))
+            {
+                CancelSource.Cancel();
+                CompleteSource.SetCanceled();
+                return;
+            }
 
             var meshData = await instance.GenerateMeshAsync(Lod, CancelSource.Token, this);
 

@@ -11,47 +11,33 @@ namespace Generation.Passes
     [Serializable]
     public class TownPass : GeneratorPass
     {
-        [Range(0.001f, 0.05f)] public float frequency = 0.015f;
-        [Range(0f, 1f)] public float threshold = 0.9f;
-        [Range(1, 16)] public int buildingSpacing = 4;
-        [Range(0f, 1f)] public float buildingJitter = 0.5f;
+        [Range(0.001f, 0.05f)] public float frequency = 0.025f;
+        [Range(0f, 1f)] public float threshold = 0.7f;
 
         public override async Task Apply(Chunk chunk, IJob job)
         {
             var chunkSize = WorldGenerator.ChunkSize;
-            var resolution = WorldGenerator.Resolution;
-            var size = chunkSize * resolution;
+            float resolution = WorldGenerator.Resolution;
             var chunkWorldPos = chunk.WorldPosition;
             var offset = GetNoiseOffset();
-            var step = buildingSpacing * resolution;
 
-            for (float y = 0; y < size; y += step)
-            for (float x = 0; x < size; x += step)
-            {
-                var world = new Vector2(chunkWorldPos.x + x / resolution, chunkWorldPos.z + y / resolution);
-                var noise = new Vector2(world.x + offset, world.y + offset);
+            var noise = new Vector2(chunkWorldPos.x + offset, chunkWorldPos.z + offset);
+            var spawnRoll = Mathf.PerlinNoise(noise.x * frequency, noise.y * frequency);
 
-                var jitter = GetNoiseJitter(noise.x, noise.y, buildingJitter * step);
+            if (spawnRoll < threshold)
+                return;
 
-                world = new Vector2(
-                    chunkWorldPos.x + (x + jitter.x) / resolution,
-                    chunkWorldPos.z + (y + jitter.y) / resolution);
-                noise = new Vector2(world.x + offset, world.y + offset);
+            var jitter = GetNoiseJitter(noise.x, noise.y, chunkSize / resolution);
+            var townWorldPos = new Vector2(
+                chunkWorldPos.x + jitter.x,
+                chunkWorldPos.z + jitter.y
+            );
+            var height = await WorldGenerator.World.GetHeight(townWorldPos, job);
 
-                var height = await chunk.World.GetHeight(world, job);
+            var entity = new Property<Entity>(new Entity(typeof(TownObject), chunk));
+            entity.Value.Position.Value = new Vector3(townWorldPos.x, height, townWorldPos.y);
 
-                var spawnRoll = Mathf.PerlinNoise(noise.x * frequency, noise.y * frequency);
-                if (spawnRoll < threshold)
-                    continue;
-
-                var rotationY = StaticNoise(noise.x, noise.y) * 360f;
-
-                var entity = new Property<Entity>(new Entity(typeof(TownObject), chunk));
-                entity.Value.Position.Value = new Vector3(world.x, height, world.y);
-                entity.Value.Rotation.Value = Quaternion.Euler(0f, rotationY, 0f);
-
-                chunk.AddEntity(entity);
-            }
+            chunk.AddEntity(entity);
         }
     }
 }

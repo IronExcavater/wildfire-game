@@ -12,7 +12,7 @@ namespace Generation
 {
     public class WorldLoader : Singleton<WorldLoader>
     {
-        [SerializeField, Range(1, 1000)] private float _loadRadius = 10;
+        [SerializeField, Range(1, 30)] private float _loadRadius = 10;
         public static float LoadRadius => Instance._loadRadius;
 
         private Dictionary<Type, IObjectPool> _pools = new();
@@ -51,36 +51,39 @@ namespace Generation
             throw new InvalidOperationException($"ObjectPool<{type.Name}> not found");
         }
 
-        public static List<DataObject<Entity>> GetInstancesAtPosition(Vector2Int position)
-        {
-            return Instance._instances[position];
-        }
-
         public static bool TryGetInstancesAtPosition(Vector2Int position, out List<DataObject<Entity>> instances)
         {
             return Instance._instances.TryGetValue(position, out instances);
         }
 
-        public static List<DataObject<Entity>> GetInstancesOfTypeAtPosition(Vector2Int position, Type type)
+        public static bool TryGetInstancesOfTypeAtPosition<T>(Vector2Int position, out List<T> instances)
+            where T : DataObject<Entity>
         {
-            return GetInstancesAtPosition(position).FindAll(instance => instance.GetType() == type);
-        }
+            instances = null;
 
-        public static DataObject<Entity> GetInstanceOfTypeAtPosition(Vector2Int position, Type type)
-        {
-            return GetInstancesAtPosition(position).Find(instance => instance.GetType() == type);
-        }
+            if (TryGetInstancesAtPosition(position, out var all))
+                return false;
 
-        public static bool TryGetInstancesOfTypeAtPosition(Vector2Int position, Type type, out List<DataObject<Entity>> instances)
-        {
-            instances = GetInstancesAtPosition(position).FindAll(instance => instance.GetType() == type);
+            instances = all
+                .OfType<T>()
+                .ToList();
+
             return instances.Count > 0;
         }
 
-        public static bool TryGetInstanceOfTypeAtPosition(Vector2Int position, Type type, out DataObject<Entity> instances)
+        public static bool TryGetInstanceOfTypeAtPosition<T>(Vector2Int position, out T instance)
+            where T : DataObject<Entity>
         {
-            instances = GetInstancesAtPosition(position).Find(instance => instance.GetType() == type);
-            return instances != null;
+            instance = null;
+
+            if (TryGetInstancesAtPosition(position, out var all))
+                return false;
+
+            instance = all
+                .OfType<T>()
+                .First();
+
+            return instance != null;
         }
 
         public static async Task<List<DataObject<Entity>>> GetChunk(Vector2Int position)

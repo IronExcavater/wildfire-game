@@ -15,6 +15,7 @@ namespace Utilities
                 c.gameObject.layer = layer;
         }
 
+        #region Vector Extensions
 
         public static Vector3 ClosestPointOnLine(this Vector3 point, Vector3 linePoint, Vector3 lineDirection,
             float length = float.MaxValue)
@@ -31,6 +32,14 @@ namespace Utilities
             lineDirection.Normalize();
             return Mathf.Clamp(Vector3.Dot(point - linePoint, lineDirection), 0, length);
         }
+
+        public static Vector2 AddScalar(this Vector2 vec, float scalar) =>
+            new Vector2(vec.x + scalar, vec.y + scalar);
+
+        public static Vector3 AddScalar(this Vector3 vec, float scalar) =>
+            new Vector3(vec.x + scalar, vec.y + scalar, vec.z + scalar);
+
+        #endregion
 
         public static void AddValueToAverage(ref double average, ref int count, double value)
         {

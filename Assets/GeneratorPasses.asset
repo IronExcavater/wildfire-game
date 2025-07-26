@@ -21,7 +21,7 @@ MonoBehaviour:
     - Key: 2
       Value:
       - rid: 1915427888439754826
-      - rid: 1915427888439754827
+      - rid: 1915427920231006271
   references:
     version: 2
     RefIds:
@@ -51,10 +51,8 @@ MonoBehaviour:
         treeScale:
           min: 0.6
           max: 1.4
-    - rid: 1915427888439754827
+    - rid: 1915427920231006271
       type: {class: TownPass, ns: Generation.Passes, asm: Assembly-CSharp}
       data:
-        frequency: 0.015
-        threshold: 0.9
-        buildingSpacing: 4
-        buildingJitter: 0.5
+        frequency: 0.025
+        threshold: 0.7

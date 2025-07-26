@@ -10,7 +10,6 @@ namespace Generation.Data
 {
     public sealed class Chunk : IDisposable, IObservable<Chunk, ValueChange<Chunk>>
     {
-        public readonly World World;
         public Vector2Int Position;
         public Vector3 WorldPosition => new(Position.x * WorldGenerator.ChunkSize, 0, Position.y * WorldGenerator.ChunkSize);
         public readonly ObservableList<Property<Entity>> Entities = new();
@@ -23,7 +22,6 @@ namespace Generation.Data
         public Chunk(World world, Vector2Int position)
         {
             InitializeListeners();
-            World = world;
             Position = position;
         }
 

@@ -36,7 +36,7 @@ namespace Generation.Jobs
 
                 if (passes != null && !chunk.IsStageComplete(Stage))
                     foreach (var pass in WorldGenerator.Passes[Stage])
-                        await pass.Apply(chunk, this);
+                        if (pass != null) await pass.Apply(chunk, this);
 
                 chunk.MarkStageComplete(Stage);
                 CompleteSource.TrySetResult(chunk);
