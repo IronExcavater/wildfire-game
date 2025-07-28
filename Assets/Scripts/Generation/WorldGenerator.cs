@@ -65,13 +65,29 @@ namespace Generation
             return World.Chunks.TryGetValue(position, out chunk);
         }
 
-        public static int HashSeed(string seed)
+        [SerializeField] private MinMaxInt seedIntClamp = new(100_000, 100_000_000);
+
+        public static bool IsSeedValid(string seed)
+        {
+            var hash = HashSeed(seed, false);
+            return hash == Instance.seedIntClamp.Clamp(hash);
+        }
+
+        public static string RandomizeSeed()
+        {
+            return System.Guid.NewGuid().ToString("N")
+                .Substring(0, Random.Range(SeedLengthClamp.min, SeedLengthClamp.max));
+        }
+
+        public static int HashSeed(string seed, bool clamp = true)
         {
             unchecked
             {
                 var hash = 23;
                 foreach (var c in seed) hash = hash * 31 + c;
-                return Math.Clamp(hash, 100_000, 2_000_000_000);
+
+                if (!clamp) return hash;
+                return Mathf.Max(hash, Instance.seedIntClamp.min) % Instance.seedIntClamp.max;
             }
         }
 

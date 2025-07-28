@@ -2,11 +2,25 @@
 using System.Threading.Tasks;
 using Generation.Data;
 using Generation.Jobs;
+using Unity.Entities;
 using UnityEngine;
 using Utilities;
 
 namespace Generation.Passes
 {
+    public partial struct HillGenerationSystem : ISystem
+    {
+        public void OnCreate(ref SystemState state)
+        {
+
+        }
+
+        public void OnUpdate(ref SystemState state)
+        {
+            var config
+        }
+    }
+
     [Serializable]
     public class HillPass : GeneratorPass
     {

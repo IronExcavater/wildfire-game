@@ -1,13 +1,33 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Generation.Components;
 using Generation.Data;
 using Generation.Passes;
+using Unity.Collections;
+using Unity.Entities;
 using UnityEngine;
+using Chunk = Generation.Components.Chunk;
 
 namespace Generation.Jobs
 {
-    public class GenerateChunkJob : JobBase<Chunk>
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    public partial struct GenerateChunkJob : ISystem
     {
+        private EntityQuery _uninitializedChunks;
+
+        public void OnCreate(ref SystemState state)
+        {
+            _uninitializedChunks = state.GetEntityQuery(
+                ComponentType.ReadOnly<Chunk>(),
+                ComponentType.Exclude<ChunkGeneratedTag>());
+        }
+
+        public void OnUpdate(ref SystemState state)
+        {
+            if (_uninitializedChunks.IsEmptyIgnoreFilter) return;
+
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
+        }
+
         public GenerationStage Stage { get; }
 
         public GenerateChunkJob(Vector2Int position, GenerationStage stage) : base(ChunkJobType.GenerateChunk, position)
@@ -21,7 +41,7 @@ namespace Generation.Jobs
             {
                 WorldGenerator.TryGetChunkReference(Position, out var chunk);
 
-                chunk ??= new Chunk(WorldGenerator.World, Position);
+                chunk ??= new Data.Chunk(WorldGenerator.World, Position);
                 WorldGenerator.World.Chunks.TryAdd(Position, chunk);
 
                 var previousStage = Stage.GetPreviousStage();
@@ -43,20 +63,14 @@ namespace Generation.Jobs
             }, CancelSource.Token);
         }
 
-        public override int CompareTo(IJob other)
+        public struct GeneratorPassConfig : IComponentData
         {
-            var cmp = base.CompareTo(other);
-            return other is GenerateChunkJob btj && cmp == 0
-                ? Stage.CompareTo(btj.Stage)
-                : cmp;
+            public BlobAssetReference<GeneratorPassBlob> PassBlob;
         }
 
-        public override bool Equals(object obj) =>
-            obj is GenerateChunkJob other &&
-            base.Equals(other) &&
-            Stage.Equals(other.Stage);
-        public override int GetHashCode() => HashCode.Combine(Type, Position, Stage);
-
-        public override string ToString() => $"{Type} {{ Stage: {Stage} }} job at {Position}";
+        public struct GeneratorPassBlob
+        {
+            public BlobArray<FixedString64Bytes> Entries;
+        }
     }
 }

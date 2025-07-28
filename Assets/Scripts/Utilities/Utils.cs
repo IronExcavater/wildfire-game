@@ -9,11 +9,15 @@ namespace Utilities
 {
     public static class Utils
     {
+        #region GameObject Extensions
+
         public static void SetLayerRecursive(this GameObject obj, int layer)
         {
             foreach (var c in obj.GetComponentsInChildren<Transform>(true))
                 c.gameObject.layer = layer;
         }
+
+        #endregion
 
         #region Vector Extensions
 
@@ -41,6 +45,8 @@ namespace Utilities
 
         #endregion
 
+        #region Math Functions
+
         public static void AddValueToAverage(ref double average, ref int count, double value)
         {
             average += (value - average) / ++count;
@@ -57,6 +63,35 @@ namespace Utilities
         }
 
         public static int EuclideanMod(int a, int b) => (a % b + b) % b;
+
+        #endregion
+
+        #region Noise Functions
+
+        public static float StaticNoise(float x, float y)
+        {
+            var ix = (ulong)Mathf.FloorToInt(x);
+            var iy = (ulong)Mathf.FloorToInt(y);
+
+            var hash = Mix(ix, iy);
+            return (hash & 0xFFFFFFFF) / (float)uint.MaxValue;
+        }
+
+        private static ulong Mix(ulong a, ulong b)
+        {
+            const ulong prime1 = 0xa0761d6478bd642f;
+            const ulong prime2 = 0xe7037ed1a0b428db;
+
+            var result = (a ^ prime1) * (b ^ prime2);
+            result ^= (result >> 32);
+            result *= (prime1 ^ prime2);
+            result ^= (result >> 29);
+            return result;
+        }
+
+        #endregion
+
+        #region Type Helpers
 
         public static Type GetBaseType(this Type type)
         {
@@ -114,6 +149,8 @@ namespace Utilities
                     return field.Name;
             return null;
         }
+
+        #endregion
 
         public static List<T> GetRange<T>(this IReadOnlyList<T> source, int index, int count)
         {
