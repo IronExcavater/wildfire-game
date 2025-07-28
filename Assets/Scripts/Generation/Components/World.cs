@@ -1,7 +1,6 @@
 ﻿using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
-using Utilities;
 
 namespace Generation.Components
 {
@@ -22,21 +21,20 @@ namespace Generation.Components
         public string seed;
 
         private string _lastSeed;
-        private static readonly MinMaxInt SeedLengthClamp = new(10, 15);
 
         #if UNITY_EDITOR
         private void OnValidate()
         {
             if (string.IsNullOrWhiteSpace(seed))
             {
-                RandomizeSeed();
+                WorldGenerator.RandomizeSeed();
                 Debug.LogWarning("Seed was empty. Generated random seed.");
             }
-            else if (!IsSeedValid(seed))
+            else if (!WorldGenerator.IsSeedValid(seed))
             {
                 seed = _lastSeed;
-                if (!IsSeedValid(seed)) _lastSeed = seed = RandomizeSeed();
-                Debug.LogWarning($"Seed must be between {SeedLengthClamp.min} and {SeedLengthClamp.max} characters.");
+                if (!WorldGenerator.IsSeedValid(seed)) _lastSeed = seed = WorldGenerator.RandomizeSeed();
+                Debug.LogWarning($"Seed must be between {WorldGenerator.SeedStringClamp.min} and {WorldGenerator.SeedStringClamp.max} characters.");
             }
             else
                 _lastSeed = seed;
@@ -53,7 +51,7 @@ namespace Generation.Components
                 ChunkSize = authoring.chunkSize,
                 Resolution = authoring.resolution,
                 MaxLodLevel = authoring.maxLodLevel,
-                SeedInt = WorldConfigAuthoring.HashSeed(authoring.seed),
+                SeedInt = WorldGenerator.HashSeed(authoring.seed),
                 SeedString = authoring.seed
             });
         }

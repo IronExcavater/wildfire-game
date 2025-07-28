@@ -62,15 +62,5 @@ namespace Generation.Jobs
                 CompleteSource.TrySetResult(chunk);
             }, CancelSource.Token);
         }
-
-        public struct GeneratorPassConfig : IComponentData
-        {
-            public BlobAssetReference<GeneratorPassBlob> PassBlob;
-        }
-
-        public struct GeneratorPassBlob
-        {
-            public BlobArray<FixedString64Bytes> Entries;
-        }
     }
 }

@@ -5,7 +5,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using Utilities;
 using Utilities.Attributes;
-using Utilities.Observables;
 
 namespace Generation.Passes
 {
@@ -51,7 +50,7 @@ namespace Generation.Passes
     {
         public override void Bake(ForestConfigAuthoring authoring)
         {
-            AddComponent(new ForestConfig
+            AddComponent(GetEntity(TransformUsageFlags.None), new ForestConfig
             {
                 ForestFrequency = authoring.forestFrequency,
                 SpawnChance = authoring.spawnChance,
@@ -70,6 +69,7 @@ namespace Generation.Passes
     public partial struct ForestGenerationSystem : ISystem
     {
         private EntityQuery _query;
+        private NativeParallelHashMap<int2, Entity> _terrainLookup;
 
         public void OnCreate(ref SystemState state)
         {
@@ -79,71 +79,74 @@ namespace Generation.Passes
             _query = state.GetEntityQuery(
                 ComponentType.ReadOnly<Chunk>(),
                 ComponentType.Exclude<ForestGeneratedTag>());
+
+            _terrainLookup = new NativeParallelHashMap<int2, Entity>(1024, Allocator.Persistent);
         }
 
         public void OnUpdate(ref SystemState state)
         {
-            var world = SystemAPI.GetSingleton<WorldConfig>();
-            var forest = SystemAPI.GetSingleton<ForestConfig>();
+            var worldConfig = SystemAPI.GetSingleton<WorldConfig>();
+            var forestConfig = SystemAPI.GetSingleton<ForestConfig>();
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-            var positions = _query.ToComponentDataArray<Chunk>(Allocator.Temp);
+            var chunks = _query.ToComponentDataArray<Chunk>(Allocator.Temp);
             var entities = _query.ToEntityArray(Allocator.Temp);
 
-            for (var i = 0; i < positions.Length; i++)
-                Apply(ref ecb, world, forest, positions[i], entities[i]);
+            for (var i = 0; i < chunks.Length; i++)
+            {
+                Apply(ref ecb, ref state, worldConfig, forestConfig, chunks[i], entities[i]);
+                ecb.AddComponent<ForestGeneratedTag>(entities[i]);
+            }
         }
 
-        private static void Apply(ref EntityCommandBuffer ecb, WorldConfig world, ForestConfig forest, Chunk chunk, Entity entity)
+        private void Apply(ref EntityCommandBuffer ecb, ref SystemState state, WorldConfig worldConfig,
+            ForestConfig forestConfig, Chunk chunk, Entity chunkEntity)
         {
-            var tree = ecb.CreateEntity();
-            ecb.AddComponent(tree, new LocalTransform
-            {
-            });
-
-            var size = world.ChunkSize * world.Resolution;
-            var chunkWorldPos = chunk.ToWorldPosition(world.ChunkSize);
-            var offset =
-            var step = forest.TreeSpacing * world.Resolution;
+            var offset = WorldGenerator.HashSeed(worldConfig.SeedString + GetType().FullName);
+            var chunkWorld = WorldGenerator.ChunkToWorld(chunk.Position, worldConfig.ChunkSize);
+            var size = worldConfig.ChunkSize * worldConfig.Resolution;
+            var step = forestConfig.TreeSpacing * worldConfig.Resolution;
 
             for (float y = 0; y < size; y += step)
             for (float x = 0; x < size; x += step)
             {
-                var worldPos = chunkWorldPos + new float2(x, y) / world.Resolution;
-                var noise = world.AddScalar(offset);
+                var world = chunkWorld + new float2(x, y) / worldConfig.Resolution;
+                var noise = world + offset;
 
-                var jitter = GetNoiseJitter(noise.x, noise.y, treeJitter * step);
+                var jitter = Utils.JitterNoise(noise.x, noise.y, forestConfig.TreeJitter * step);
 
-                world = chunkWorldPos + (new Vector2(x, y) + jitter / resolution);
-                noise = new Vector2(world.x + offset, world.y + offset);
+                world = chunkWorld + (new float2(x, y) + jitter / worldConfig.Resolution);
+                noise = world + offset;
 
-                var height = await WorldGenerator.World.GetHeight(world, job);
+                var height = HeightmapUtils.GetHeight(noise, worldConfig, ref state);
 
-                var forestMask = Mathf.PerlinNoise(noise.x * forestFrequency, noise.y * forestFrequency);
-                var plainsMask = Mathf.PerlinNoise(noise.x * plainsFrequency, noise.y * plainsFrequency);
+                var forestMask = Mathf.PerlinNoise(noise.x * forestConfig.ForestFrequency, noise.y * forestConfig.ForestFrequency);
+                var plainsMask = Mathf.PerlinNoise(noise.x * forestConfig.PlainsFrequency, noise.y * forestConfig.PlainsFrequency);
 
                 // Skip tree if in a plains patch
-                if (plainsMask > plainsThreshold)
+                if (plainsMask > forestConfig.PlainsThreshold)
                     continue;
 
                 // Boost tree density in lower altitudes
-                var valleyFactor = Mathf.InverseLerp(elevationFactor.max, elevationFactor.min, height);
-                var boosted = Mathf.Pow(valleyFactor, 1.5f) * (1f + forestMask * valleyBoost);
-                var spawnProbability = spawnChance.Lerp(Mathf.Clamp01(boosted));
+                var valleyFactor = math.saturate(Utils.InverseLerp(forestConfig.ElevationFactor.y, forestConfig.ElevationFactor.x, height));
+                var boosted = math.pow(valleyFactor, 1.5f) * (1f + forestMask * forestConfig.ValleyBoost);
+                var spawnProbability = math.lerp(forestConfig.SpawnChance.x, forestConfig.SpawnChance.y, math.saturate(boosted));
 
-                var spawnRoll = StaticNoise(noise.x, noise.y);
+                var spawnRoll = Utils.StaticNoise(noise.x, noise.y);
                 if (spawnRoll > spawnProbability)
                     continue;
 
-                var rotationY = StaticNoise(noise.x, noise.y) * 360f;
-                var scale = treeScale.Lerp(StaticNoise(noise.x, noise.y));
+                var rotationY = Utils.StaticNoise(noise.x, noise.y) * math.PI2;
+                var scale = math.lerp(forestConfig.TreeScale.x, forestConfig.TreeScale.y, Utils.StaticNoise(noise.x, noise.y));
 
-                var entity = new Property<Entity>(new Entity(typeof(TreeObject), chunk));
-                entity.Value.Position.Value = new Vector3(world.x, height, world.y);
-                entity.Value.Rotation.Value = Quaternion.Euler(0f, rotationY, 0f);
-                entity.Value.Scale.Value = Vector3.one * scale;
-
-                chunk.AddEntity(entity);
+                var tree = ecb.CreateEntity();
+                ecb.AddComponent(tree, new LocalTransform
+                {
+                    Position = new float3(world.x, height, world.y),
+                    Rotation = quaternion.Euler(0f, rotationY, 0f),
+                    Scale = scale
+                });
+                ecb.AddComponent<TreeTag>(tree);
             }
         }
     }

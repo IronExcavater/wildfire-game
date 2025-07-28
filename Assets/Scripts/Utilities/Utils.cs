@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Utilities
@@ -63,6 +64,9 @@ namespace Utilities
         }
 
         public static int EuclideanMod(int a, int b) => (a % b + b) % b;
+        public static int2 EuclideanMod(int2 a, int b) => (a % b + b) % b;
+
+        public static float InverseLerp(float a, float b, float value) => (value - a) / (b - a);
 
         #endregion
 
@@ -87,6 +91,13 @@ namespace Utilities
             result *= (prime1 ^ prime2);
             result ^= (result >> 29);
             return result;
+        }
+
+        public static float2 JitterNoise(float x, float y, float amount)
+        {
+            var jitterAmount = StaticNoise(x, y) * amount;
+            var jitterAngle = StaticNoise(x, y) * Mathf.PI * 2f;
+            return new float2(Mathf.Cos(jitterAngle), Mathf.Sin(jitterAngle)) * jitterAmount;
         }
 
         #endregion

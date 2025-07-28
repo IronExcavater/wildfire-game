@@ -7,12 +7,4 @@ namespace Generation.Components
     {
         public int2 Position;
     }
-
-    public static class ChunkPositionExtensions
-    {
-        public static float2 ToWorldPosition(this Chunk chunk, int chunkSize)
-        {
-            return (float2)chunk.Position * chunkSize;
-        }
-    }
 }
