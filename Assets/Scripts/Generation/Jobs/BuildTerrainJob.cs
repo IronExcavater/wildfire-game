@@ -22,7 +22,7 @@ namespace Generation.Jobs
 
         public override async Task Start()
         {
-            if (!WorldLoader.TryGetInstanceOfTypeAtPosition(Position, out TerrainObject instance))
+            /*if (!WorldLoader.TryGetInstanceOfTypeAtPosition(Position, out TerrainObject instance))
             {
                 CancelSource.Cancel();
                 CompleteSource.SetCanceled();
@@ -39,7 +39,7 @@ namespace Generation.Jobs
                 triangles = meshData.triangles
             };
 
-            CompleteSource.SetResult(mesh);
+            CompleteSource.SetResult(mesh);*/
         }
 
         public override int CompareTo(IJob other)

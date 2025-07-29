@@ -2,6 +2,7 @@
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 using Utilities;
 using Utilities.Attributes;
@@ -69,7 +70,6 @@ namespace Generation.Passes
     public partial struct ForestGenerationSystem : ISystem
     {
         private EntityQuery _query;
-        private NativeParallelHashMap<int2, Entity> _terrainLookup;
 
         public void OnCreate(ref SystemState state)
         {
@@ -79,8 +79,6 @@ namespace Generation.Passes
             _query = state.GetEntityQuery(
                 ComponentType.ReadOnly<Chunk>(),
                 ComponentType.Exclude<ForestGeneratedTag>());
-
-            _terrainLookup = new NativeParallelHashMap<int2, Entity>(1024, Allocator.Persistent);
         }
 
         public void OnUpdate(ref SystemState state)

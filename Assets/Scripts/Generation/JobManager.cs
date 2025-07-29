@@ -100,7 +100,7 @@ namespace Generation
             {
                 if (!job.IsRunning) continue;
 
-                job.Activate(WorldLoader.CameraChunkPosition());
+                //job.Activate(WorldLoader.CameraChunkPosition());
 
                 if (job.Parent != null)
                 {

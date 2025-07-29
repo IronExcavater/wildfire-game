@@ -11,7 +11,7 @@ namespace Generation.Data
     public sealed class Chunk : IDisposable, IObservable<Chunk, ValueChange<Chunk>>
     {
         public Vector2Int Position;
-        public Vector2 WorldPosition => WorldGenerator.ChunkToWorld(Position);
+        public Vector2 WorldPosition => new Vector2();//WorldGenerator.ChunkToWorld(Position, 32);
 
         public readonly ObservableList<Property<Entity>> Entities = new();
 
@@ -20,11 +20,11 @@ namespace Generation.Data
 
         private readonly object _entityLock = new();
 
-        public Chunk(World world, Vector2Int position)
+        /*public Chunk(World world, Vector2Int position)
         {
             InitializeListeners();
             Position = position;
-        }
+        }*/
 
         private void InitializeListeners()
         {
@@ -54,7 +54,7 @@ namespace Generation.Data
             }
         }
 
-        public Property<float[,]> GetHeightmap()
+        /*public Property<float[,]> GetHeightmap()
         {
             var chunkSize = WorldGenerator.ChunkSize;
             var size = chunkSize * WorldGenerator.Resolution;
@@ -75,7 +75,7 @@ namespace Generation.Data
             }
 
             return heightmap;
-        }
+        }*/
 
         private GenerationStage _completedStage = GenerationStage.None;
         public GenerationStage CompletedStage => _completedStage;
@@ -91,7 +91,7 @@ namespace Generation.Data
         {
             lock (_entityLock)
             {
-                _ = WorldLoader.RemoveChunk(Position);
+                //_ = WorldLoader.RemoveChunk(Position);
                 foreach (var entity in Entities)
                     entity.Value.Dispose();
                 Entities.ClearListeners();

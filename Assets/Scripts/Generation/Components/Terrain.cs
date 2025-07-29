@@ -1,14 +1,19 @@
 ﻿using Generation.Passes;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Utilities;
 
 namespace Generation.Components
 {
-    public struct Heightmap : IBufferElementData
+    public struct TerrainHeightmap : IBufferElementData
     {
         public float Value;
+    }
+
+    public struct TerrainMesh : IComponentData
+    {
+        public int2 Dimensions;
+        public float CellSize;
     }
 
     public struct TerrainReference : IComponentData
@@ -52,10 +57,10 @@ namespace Generation.Components
                 return 0f;
 
             var terrainEntity = state.EntityManager.GetComponentData<TerrainReference>(chunkEntity).TerrainEntity;
-            if (!state.EntityManager.HasBuffer<Heightmap>(terrainEntity))
+            if (!state.EntityManager.HasBuffer<TerrainHeightmap>(terrainEntity))
                 return 0f;
 
-            var heightmapBuffer = state.EntityManager.GetBuffer<Heightmap>(terrainEntity);
+            var heightmapBuffer = state.EntityManager.GetBuffer<TerrainHeightmap>(terrainEntity);
 
             var resolution = worldConfig.Resolution;
             var dim = worldConfig.ChunkSize * resolution + 1;

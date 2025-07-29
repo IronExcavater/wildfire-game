@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Generation.Data;
-using Generation.Jobs;
-using Generation.Passes;
 using Unity.Mathematics;
 using UnityEngine;
 using Utilities;
@@ -12,36 +7,6 @@ namespace Generation
 {
     public class WorldGenerator : Singleton<WorldGenerator>
     {
-        [SerializeField, Range(1, 128)] private int _chunkSize = 32;
-        public static int ChunkSize => Instance._chunkSize;
-
-        [SerializeField, Range(1, 10)] private int _resolution = 2;
-        public static int Resolution => Instance._resolution;
-
-        [SerializeField, Range(1, 8)] private int _maxLodLevel = 4;
-        public static int MaxLodLevel => Instance._maxLodLevel;
-
-        public static string SeedString { get; set; }
-        public static int SeedInt => HashSeed(SeedString);
-
-        private World _world = new();
-        public static World World => Instance._world;
-
-        private Dictionary<GenerationStage, List<GeneratorPass>> _passes = new();
-        public static IReadOnlyDictionary<GenerationStage, List<GeneratorPass>> Passes => Instance._passes;
-
-        [SerializeField] private GeneratorPasses _generatorPasses;
-
-        public void AddPass(GenerationStage stage, GeneratorPass pass) => _passes[stage].Add(pass);
-
-        protected override void Awake()
-        {
-            base.Awake();
-            if (_generatorPasses != null) _passes = _generatorPasses.passes.Dictionary;
-            Debug.Log(_passes[GenerationStage.Terrain]);
-            SeedString = _generatorPasses?.seed ?? "default";
-        }
-
         public static int2 WorldToChunk(float2 world, int chunkSize) => (int2)math.floor(world / chunkSize);
         public static float2 ChunkToWorld(int2 chunk, int chunkSize) => chunk * chunkSize;
 

@@ -11,6 +11,9 @@ namespace Generation.Components
         public int MaxLodLevel;
         public int SeedInt;
         public FixedString64Bytes SeedString;
+
+        public int RenderDistance;
+        public int SimulationDistance;
     }
 
     public class WorldConfigAuthoring : MonoBehaviour
@@ -19,6 +22,9 @@ namespace Generation.Components
         [Range(1, 10)] public int resolution = 2;
         [Range(1, 8)] public int maxLodLevel = 4;
         public string seed;
+
+        [Range(1, 16)] public int renderDistance = 4;
+        [Range(1, 32)] public int simulationDistance = 12;
 
         private string _lastSeed;
 
@@ -52,7 +58,9 @@ namespace Generation.Components
                 Resolution = authoring.resolution,
                 MaxLodLevel = authoring.maxLodLevel,
                 SeedInt = WorldGenerator.HashSeed(authoring.seed),
-                SeedString = authoring.seed
+                SeedString = authoring.seed,
+                RenderDistance = authoring.renderDistance,
+                SimulationDistance = authoring.simulationDistance
             });
         }
     }

@@ -77,7 +77,7 @@ namespace Generation.Passes
             var size = worldConfig.ChunkSize * worldConfig.Resolution;
 
             var terrain = ecb.CreateEntity();
-            var heightmapBuffer = ecb.AddBuffer<Heightmap>(terrain);
+            var heightmapBuffer = ecb.AddBuffer<TerrainHeightmap>(terrain);
             ecb.AddComponent(chunkEntity, new TerrainReference { TerrainEntity = terrain });
 
             for (var y = 0; y <= size; y++)
@@ -98,7 +98,7 @@ namespace Generation.Passes
                     freq *= hillConfig.Lacunarity;
                 }
 
-                heightmapBuffer.Add(new Heightmap { Value = height });
+                heightmapBuffer.Add(new TerrainHeightmap { Value = height });
             }
         }
     }
