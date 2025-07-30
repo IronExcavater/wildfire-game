@@ -45,24 +45,24 @@ namespace Generation.Passes
 
         [Header("Tree Variation")]
         [MinMax(0.5f, 2f)] public MinMax treeScale = new(0.6f, 1.4f);
-    }
 
-    public class ForestConfigBaker : Baker<ForestConfigAuthoring>
-    {
-        public override void Bake(ForestConfigAuthoring authoring)
+        private class ForestConfigBaker : Baker<ForestConfigAuthoring>
         {
-            AddComponent(GetEntity(TransformUsageFlags.None), new ForestConfig
+            public override void Bake(ForestConfigAuthoring authoring)
             {
-                ForestFrequency = authoring.forestFrequency,
-                SpawnChance = authoring.spawnChance,
-                PlainsFrequency = authoring.plainsFrequency,
-                PlainsThreshold = authoring.plainsThreshold,
-                ElevationFactor = authoring.elevationFactor,
-                ValleyBoost = authoring.valleyBoost,
-                TreeSpacing = authoring.treeSpacing,
-                TreeJitter = authoring.treeJitter,
-                TreeScale = authoring.treeScale
-            });
+                AddComponent(GetEntity(TransformUsageFlags.None), new ForestConfig
+                {
+                    ForestFrequency = authoring.forestFrequency,
+                    SpawnChance = authoring.spawnChance,
+                    PlainsFrequency = authoring.plainsFrequency,
+                    PlainsThreshold = authoring.plainsThreshold,
+                    ElevationFactor = authoring.elevationFactor,
+                    ValleyBoost = authoring.valleyBoost,
+                    TreeSpacing = authoring.treeSpacing,
+                    TreeJitter = authoring.treeJitter,
+                    TreeScale = authoring.treeScale
+                });
+            }
         }
     }
 

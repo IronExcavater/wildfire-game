@@ -22,20 +22,20 @@ namespace Generation.Passes
         [Range(1, 10)] public int octaves = 8;
         [Range(0.01f, 10)] public float lacunarity = 2f;
         [Range(0.01f, 1)] public float persistence = 0.5f;
-    }
 
-    public class HillConfigBaker : Baker<HillConfigAuthoring>
-    {
-        public override void Bake(HillConfigAuthoring authoring)
+        private class HillConfigBaker : Baker<HillConfigAuthoring>
         {
-            AddComponent(GetEntity(TransformUsageFlags.None), new HillConfig
+            public override void Bake(HillConfigAuthoring authoring)
             {
-                Amplitude = authoring.amplitude,
-                Frequency = authoring.frequency,
-                Octaves = authoring.octaves,
-                Lacunarity = authoring.lacunarity,
-                Persistence = authoring.persistence
-            });
+                AddComponent(GetEntity(TransformUsageFlags.None), new HillConfig
+                {
+                    Amplitude = authoring.amplitude,
+                    Frequency = authoring.frequency,
+                    Octaves = authoring.octaves,
+                    Lacunarity = authoring.lacunarity,
+                    Persistence = authoring.persistence
+                });
+            }
         }
     }
 

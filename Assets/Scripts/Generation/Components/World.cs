@@ -46,22 +46,22 @@ namespace Generation.Components
                 _lastSeed = seed;
         }
         #endif
-    }
 
-    public class WorldConfigBaker : Baker<WorldConfigAuthoring>
-    {
-        public override void Bake(WorldConfigAuthoring authoring)
+        private class WorldConfigBaker : Baker<WorldConfigAuthoring>
         {
-            AddComponent(new WorldConfig
+            public override void Bake(WorldConfigAuthoring authoring)
             {
-                ChunkSize = authoring.chunkSize,
-                Resolution = authoring.resolution,
-                MaxLodLevel = authoring.maxLodLevel,
-                SeedInt = WorldGenerator.HashSeed(authoring.seed),
-                SeedString = authoring.seed,
-                RenderDistance = authoring.renderDistance,
-                SimulationDistance = authoring.simulationDistance
-            });
+                AddComponent(GetEntity(TransformUsageFlags.None), new WorldConfig
+                {
+                    ChunkSize = authoring.chunkSize,
+                    Resolution = authoring.resolution,
+                    MaxLodLevel = authoring.maxLodLevel,
+                    SeedInt = WorldGenerator.HashSeed(authoring.seed),
+                    SeedString = authoring.seed,
+                    RenderDistance = authoring.renderDistance,
+                    SimulationDistance = authoring.simulationDistance
+                });
+            }
         }
     }
 }
