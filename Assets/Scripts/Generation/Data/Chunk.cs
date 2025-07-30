@@ -62,7 +62,7 @@ namespace Generation.Data
             if (!TryGetEntityOfType<TerrainObject>(out var terrain))
             {
                 terrain = new Property<Entity>(new Entity(typeof(TerrainObject), this));
-                terrain.Value.Position.Value = WorldPosition;
+                terrain.Value.Position.Value = new Vector3(WorldPosition.x, 0, WorldPosition.y);
                 AddEntity(terrain);
             }
 

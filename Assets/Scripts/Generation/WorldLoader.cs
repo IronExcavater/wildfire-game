@@ -76,7 +76,7 @@ namespace Generation
         {
             instance = null;
 
-            if (TryGetInstancesAtPosition(position, out var all))
+            if (!TryGetInstancesAtPosition(position, out var all))
                 return false;
 
             instance = all

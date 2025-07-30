@@ -12,6 +12,12 @@ namespace Generation.Jobs
         {
         }
 
+        public override void Activate(Vector2Int cameraChunk)
+        {
+            base.Activate(cameraChunk);
+            JobManager.CancelAllJobsOfTypeAtPosition<UnloadChunkJob>(Position);
+        }
+
         public override async Task Start()
         {
             var chunk = await WorldGenerator.GetChunk(Position, this);

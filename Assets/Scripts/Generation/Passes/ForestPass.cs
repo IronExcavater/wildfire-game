@@ -49,7 +49,7 @@ namespace Generation.Passes
 
                 var jitter = GetNoiseJitter(noise.x, noise.y, treeJitter * step);
 
-                world = chunkWorldPos + (new Vector2(x, y) + jitter / resolution);
+                world = chunkWorldPos + (new Vector2(x, y) + jitter) / resolution;
                 noise = new Vector2(world.x + offset, world.y + offset);
 
                 var height = await WorldGenerator.World.GetHeight(world, job);
